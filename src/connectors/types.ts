@@ -3,12 +3,14 @@ import type { AppConfig, ConnectorName } from '../config.js';
 import type { Logger } from '../logger.js';
 import type { ToolRisk } from '../security/policy.js';
 
+export type ToolInputSchema = z.ZodObject<z.ZodRawShape>;
+
 export interface ConnectorContext {
   config: AppConfig;
   logger: Logger;
 }
 
-export interface EnterpriseTool<TInput extends z.ZodTypeAny = z.ZodTypeAny> {
+export interface EnterpriseTool<TInput extends ToolInputSchema = ToolInputSchema> {
   name: string;
   description: string;
   connector: ConnectorName;
@@ -25,6 +27,6 @@ export interface EnterpriseConnector {
   tools(context: ConnectorContext): EnterpriseTool[];
 }
 
-export function tool<TInput extends z.ZodTypeAny>(definition: EnterpriseTool<TInput>): EnterpriseTool<TInput> {
+export function tool<TInput extends ToolInputSchema>(definition: EnterpriseTool<TInput>): EnterpriseTool<TInput> {
   return definition;
 }

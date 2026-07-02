@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,3 +21,5 @@ jobs:
       - run: npm install
       - run: npm run check
       - run: npm run build
+      - run: npm run audit:deps
+      - run: npm run docker:build

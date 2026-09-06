@@ -5,9 +5,18 @@ import type { ToolRisk } from '../security/policy.js';
 
 export type ToolInputSchema = z.ZodObject<z.ZodRawShape>;
 
+export interface ExecutionIdentity {
+  tenantId: string;
+  actorId: string;
+  requestId: string;
+  approvalId?: string;
+  source: 'chain-http' | 'stdio';
+}
+
 export interface ConnectorContext {
   config: AppConfig;
   logger: Logger;
+  identity: ExecutionIdentity;
 }
 
 export interface EnterpriseTool<TInput extends ToolInputSchema = ToolInputSchema> {

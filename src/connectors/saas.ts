@@ -16,14 +16,24 @@ async function microsoftGraph(config: AppConfig, path: string) {
   if (!config.MICROSOFT_TENANT_ID || !config.MICROSOFT_CLIENT_ID || !config.MICROSOFT_CLIENT_SECRET) {
     throw new Error('Microsoft Graph app credentials are not configured');
   }
-  const tokenResponse = await request(`https://login.microsoftonline.com/${config.MICROSOFT_TENANT_ID}/oauth2/v2.0/token`, {
-    method: 'POST',
-    body: new URLSearchParams({ client_id: config.MICROSOFT_CLIENT_ID, client_secret: config.MICROSOFT_CLIENT_SECRET, scope: 'https://graph.microsoft.com/.default', grant_type: 'client_credentials' }).toString(),
-    headers: { 'content-type': 'application/x-www-form-urlencoded' }
-  });
+  const tokenResponse = await request(
+    `https://login.microsoftonline.com/${config.MICROSOFT_TENANT_ID}/oauth2/v2.0/token`,
+    {
+      method: 'POST',
+      body: new URLSearchParams({
+        client_id: config.MICROSOFT_CLIENT_ID,
+        client_secret: config.MICROSOFT_CLIENT_SECRET,
+        scope: 'https://graph.microsoft.com/.default',
+        grant_type: 'client_credentials'
+      }).toString(),
+      headers: { 'content-type': 'application/x-www-form-urlencoded' }
+    }
+  );
   const tokenBody = (await tokenResponse.body.json()) as { access_token?: string };
   if (!tokenBody.access_token) throw new Error('Unable to obtain Microsoft Graph access token');
-  const graphResponse = await request(`https://graph.microsoft.com/v1.0${path}`, { headers: bearerHeaders(tokenBody.access_token) });
+  const graphResponse = await request(`https://graph.microsoft.com/v1.0${path}`, {
+    headers: bearerHeaders(tokenBody.access_token)
+  });
   return graphResponse.body.json();
 }
 
@@ -62,7 +72,8 @@ export const sharePointConnector: EnterpriseConnector = {
   name: 'sharepoint',
   displayName: 'SharePoint',
   description: 'Search SharePoint sites and files through Microsoft Graph.',
-  configured: (config) => Boolean(config.MICROSOFT_TENANT_ID && config.MICROSOFT_CLIENT_ID && config.MICROSOFT_CLIENT_SECRET),
+  configured: (config) =>
+    Boolean(config.MICROSOFT_TENANT_ID && config.MICROSOFT_CLIENT_ID && config.MICROSOFT_CLIENT_SECRET),
   tools: () => [
     tool({
       name: 'sharepoint.search_sites',
@@ -88,9 +99,22 @@ export const salesforceConnector: EnterpriseConnector = {
       connector: 'salesforce',
       risk: 'read',
       description: 'Run a read-only SOQL query. Only SELECT queries are accepted.',
-      inputSchema: z.object({ query: z.string().min(8).max(2000).regex(/^\s*select\s/i, 'Only SELECT SOQL queries are allowed').refine((value) => !/\b(insert|update|delete|upsert|undelete|merge)\b/i.test(value), 'Mutation keywords are not allowed') }),
+      inputSchema: z.object({
+        query: z
+          .string()
+          .min(8)
+          .max(2000)
+          .regex(/^\s*select\s/i, 'Only SELECT SOQL queries are allowed')
+          .refine(
+            (value) => !/\b(insert|update|delete|upsert|undelete|merge)\b/i.test(value),
+            'Mutation keywords are not allowed'
+          )
+      }),
       async run(input, { config }) {
-        const conn = new jsforce.Connection({ instanceUrl: config.SALESFORCE_INSTANCE_URL, accessToken: config.SALESFORCE_ACCESS_TOKEN });
+        const instanceUrl = config.SALESFORCE_INSTANCE_URL;
+        const accessToken = config.SALESFORCE_ACCESS_TOKEN;
+        if (!instanceUrl || !accessToken) throw new Error('Salesforce credentials are not configured');
+        const conn = new jsforce.Connection({ instanceUrl, accessToken });
         return conn.query(input.query);
       }
     })
@@ -111,7 +135,11 @@ export const hubSpotConnector: EnterpriseConnector = {
       inputSchema: z.object({ query: z.string().min(1).max(200), limit: z.number().int().min(1).max(50).default(10) }),
       async run(input, { config }) {
         if (!config.HUBSPOT_ACCESS_TOKEN) throw new Error('HUBSPOT_ACCESS_TOKEN is not configured');
-        const response = await request('https://api.hubapi.com/crm/v3/objects/contacts/search', { method: 'POST', headers: bearerHeaders(config.HUBSPOT_ACCESS_TOKEN), body: JSON.stringify({ query: input.query, limit: input.limit }) });
+        const response = await request('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+          method: 'POST',
+          headers: bearerHeaders(config.HUBSPOT_ACCESS_TOKEN),
+          body: JSON.stringify({ query: input.query, limit: input.limit })
+        });
         return response.body.json();
       }
     })
@@ -129,10 +157,16 @@ export const notionConnector: EnterpriseConnector = {
       connector: 'notion',
       risk: 'read',
       description: 'Search Notion workspace content visible to the integration.',
-      inputSchema: z.object({ query: z.string().min(1).max(200), pageSize: z.number().int().min(1).max(50).default(10) }),
+      inputSchema: z.object({
+        query: z.string().min(1).max(200),
+        pageSize: z.number().int().min(1).max(50).default(10)
+      }),
       async run(input, { config }) {
         if (!config.NOTION_TOKEN) throw new Error('NOTION_TOKEN is not configured');
-        return new NotionClient({ auth: config.NOTION_TOKEN }).search({ query: input.query, page_size: input.pageSize });
+        return new NotionClient({ auth: config.NOTION_TOKEN }).search({
+          query: input.query,
+          page_size: input.pageSize
+        });
       }
     })
   ]
@@ -149,11 +183,18 @@ export const supabaseConnector: EnterpriseConnector = {
       connector: 'supabase',
       risk: 'read',
       description: 'Select rows from an allowed Supabase table. Keep row limits low for AI context.',
-      inputSchema: z.object({ table: z.string().regex(/^[a-zA-Z0-9_]+$/), limit: z.number().int().min(1).max(100).default(25) }),
+      inputSchema: z.object({
+        table: z.string().regex(/^[a-zA-Z0-9_]+$/),
+        limit: z.number().int().min(1).max(100).default(25)
+      }),
       async run(input, { config }) {
-        if (!config.SUPABASE_URL || !config.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Supabase credentials are not configured');
-        if (config.SUPABASE_ALLOWED_TABLES.length > 0 && !config.SUPABASE_ALLOWED_TABLES.includes(input.table)) throw new Error(`Table ${input.table} is not in SUPABASE_ALLOWED_TABLES`);
-        const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+        if (!config.SUPABASE_URL || !config.SUPABASE_SERVICE_ROLE_KEY)
+          throw new Error('Supabase credentials are not configured');
+        if (config.SUPABASE_ALLOWED_TABLES.length > 0 && !config.SUPABASE_ALLOWED_TABLES.includes(input.table))
+          throw new Error(`Table ${input.table} is not in SUPABASE_ALLOWED_TABLES`);
+        const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY, {
+          auth: { persistSession: false }
+        });
         const { data, error } = await supabase.from(input.table).select('*').limit(input.limit);
         if (error) throw error;
         return data;

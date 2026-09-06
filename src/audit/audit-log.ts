@@ -2,6 +2,11 @@ import type { Logger } from '../logger.js';
 import { maskSecrets } from '../security/policy.js';
 
 export interface AuditEvent {
+  tenantId: string;
+  actorId: string;
+  requestId: string;
+  approvalId?: string;
+  source: 'chain-http' | 'stdio';
   tool: string;
   connector: string;
   risk: string;

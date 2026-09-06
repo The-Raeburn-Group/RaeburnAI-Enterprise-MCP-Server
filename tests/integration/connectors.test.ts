@@ -5,7 +5,16 @@ import { createLogger } from '../../src/logger.js';
 
 function context(env: Record<string, string>) {
   const config = loadConfig(env);
-  return { config, logger: createLogger({ ...config, LOG_LEVEL: 'silent' }) };
+  return {
+    config,
+    logger: createLogger({ ...config, LOG_LEVEL: 'silent' }),
+    identity: {
+      tenantId: 'tenant-test',
+      actorId: 'test-runner',
+      requestId: 'connector-test',
+      source: 'stdio' as const
+    }
+  };
 }
 
 describe('connector registry', () => {

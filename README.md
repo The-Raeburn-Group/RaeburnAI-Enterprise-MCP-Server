@@ -14,18 +14,18 @@ RaeburnAI Enterprise MCP Server is an open-source Model Context Protocol server 
 
 RaeburnAI is a modular enterprise AI platform for building, governing and operating practical AI systems across a business. Each project works independently, but together they form a complete operating layer for AI-enabled organisations.
 
-| Layer | Project | Role |
-|---|---|---|
-| Governance | RaeburnAI Compliance Engine | AI governance, GDPR, ISO 42001, ISO 27001 and EU AI Act readiness |
-| Knowledge | Universal AI Knowledge Graph | AI-searchable business knowledge across documents, systems and data |
-| Operations | OpenAI Operations Dashboard | Usage, cost, quality, safety and audit monitoring |
-| Executive | RaeburnAI Executive | CEO briefing, KPIs, risks and suggested actions |
-| Integration | RaeburnAI Enterprise MCP Server | Secure connector layer between AI assistants and enterprise tools |
-| Workflow | RaeburnAI Workflow Auditor | Automation opportunity discovery and savings estimates |
-| Meetings | RaeburnAI Meeting Intelligence | Decisions, actions, owners and follow-up automation |
-| Proposals | RaeburnAI Proposal Generator | Proposals, roadmaps, pricing and ROI estimates |
-| Business Twin | RaeburnAI Business Twin | Digital model of operations, risks and processes |
-| Agent OS | RaeburnAI AgentOS | Multi-agent orchestration, approvals and control |
+| Layer         | Project                         | Role                                                                |
+| ------------- | ------------------------------- | ------------------------------------------------------------------- |
+| Governance    | RaeburnAI Compliance Engine     | AI governance, GDPR, ISO 42001, ISO 27001 and EU AI Act readiness   |
+| Knowledge     | Universal AI Knowledge Graph    | AI-searchable business knowledge across documents, systems and data |
+| Operations    | OpenAI Operations Dashboard     | Usage, cost, quality, safety and audit monitoring                   |
+| Executive     | RaeburnAI Executive             | CEO briefing, KPIs, risks and suggested actions                     |
+| Integration   | RaeburnAI Enterprise MCP Server | Secure connector layer between AI assistants and enterprise tools   |
+| Workflow      | RaeburnAI Workflow Auditor      | Automation opportunity discovery and savings estimates              |
+| Meetings      | RaeburnAI Meeting Intelligence  | Decisions, actions, owners and follow-up automation                 |
+| Proposals     | RaeburnAI Proposal Generator    | Proposals, roadmaps, pricing and ROI estimates                      |
+| Business Twin | RaeburnAI Business Twin         | Digital model of operations, risks and processes                    |
+| Agent OS      | RaeburnAI AgentOS               | Multi-agent orchestration, approvals and control                    |
 
 ## Core features
 

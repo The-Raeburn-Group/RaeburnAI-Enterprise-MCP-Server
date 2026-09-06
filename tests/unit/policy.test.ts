@@ -5,7 +5,10 @@ import { loadConfig } from '../../src/config.js';
 describe('tool policy', () => {
   it('requires review for risky tools by default', () => {
     const config = loadConfig({});
-    expect(evaluateToolPolicy(config, 'slack.post_message', 'write')).toMatchObject({ allowed: true, approvalRequired: true });
+    expect(evaluateToolPolicy(config, 'slack.post_message', 'write')).toMatchObject({
+      allowed: true,
+      approvalRequired: true
+    });
   });
 
   it('supports wildcard allow lists', () => {
@@ -15,7 +18,9 @@ describe('tool policy', () => {
   });
 
   it('redacts nested credential fields', () => {
-    expect(maskSecrets({ nested: { credential: 'abc', safe: 'value' } })).toEqual({ nested: { credential: '[redacted]', safe: 'value' } });
+    expect(maskSecrets({ nested: { credential: 'abc', safe: 'value' } })).toEqual({
+      nested: { credential: '[redacted]', safe: 'value' }
+    });
   });
 
   it('truncates oversized tool results', () => {

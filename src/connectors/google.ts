@@ -1,15 +1,22 @@
 import { google } from 'googleapis';
 import { z } from 'zod';
 import type { AppConfig } from '../config.js';
+import {
+  GOOGLE_CALENDAR_READ_SCOPE,
+  GOOGLE_DRIVE_METADATA_READ_SCOPE,
+  GOOGLE_GMAIL_READ_SCOPE,
+  verifyGoogleOAuthScopes
+} from '../security/google-oauth.js';
 import type { EnterpriseConnector } from './types.js';
 import { tool } from './types.js';
 
-function googleAuth(config: AppConfig) {
+async function googleAuth(config: AppConfig, requiredScopes: string[]) {
   if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET || !config.GOOGLE_REFRESH_TOKEN) {
     throw new Error('Google OAuth credentials are not configured');
   }
   const oauth2 = new google.auth.OAuth2(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET);
   oauth2.setCredentials({ refresh_token: config.GOOGLE_REFRESH_TOKEN });
+  await verifyGoogleOAuthScopes(oauth2, requiredScopes);
   return oauth2;
 }
 
@@ -30,7 +37,10 @@ export const gmailConnector: EnterpriseConnector = {
         limit: z.number().int().min(1).max(25).default(10)
       }),
       async run(input, { config }) {
-        const gmail = google.gmail({ version: 'v1', auth: googleAuth(config) });
+        const gmail = google.gmail({
+          version: 'v1',
+          auth: await googleAuth(config, [GOOGLE_GMAIL_READ_SCOPE])
+        });
         const result = await gmail.users.messages.list({ userId: 'me', q: input.query, maxResults: input.limit });
         return result.data.messages ?? [];
       }
@@ -42,7 +52,10 @@ export const gmailConnector: EnterpriseConnector = {
       description: 'Read safe Gmail message metadata by id.',
       inputSchema: z.object({ messageId: z.string().min(1).max(200) }),
       async run(input, { config }) {
-        const gmail = google.gmail({ version: 'v1', auth: googleAuth(config) });
+        const gmail = google.gmail({
+          version: 'v1',
+          auth: await googleAuth(config, [GOOGLE_GMAIL_READ_SCOPE])
+        });
         const result = await gmail.users.messages.get({ userId: 'me', id: input.messageId, format: 'metadata' });
         return result.data;
       }
@@ -66,7 +79,10 @@ export const calendarConnector: EnterpriseConnector = {
         limit: z.number().int().min(1).max(50).default(10)
       }),
       async run(input, { config }) {
-        const calendar = google.calendar({ version: 'v3', auth: googleAuth(config) });
+        const calendar = google.calendar({
+          version: 'v3',
+          auth: await googleAuth(config, [GOOGLE_CALENDAR_READ_SCOPE])
+        });
         const result = await calendar.events.list({
           calendarId: input.calendarId,
           maxResults: input.limit,
@@ -93,7 +109,10 @@ export const googleDriveConnector: EnterpriseConnector = {
       description: 'Search Google Drive file metadata.',
       inputSchema: z.object({ query: z.string().min(1).max(100), limit: z.number().int().min(1).max(50).default(10) }),
       async run(input, { config }) {
-        const drive = google.drive({ version: 'v3', auth: googleAuth(config) });
+        const drive = google.drive({
+          version: 'v3',
+          auth: await googleAuth(config, [GOOGLE_DRIVE_METADATA_READ_SCOPE])
+        });
         const safeQuery = input.query.replaceAll("'", "\\'");
         const result = await drive.files.list({
           q: `name contains '${safeQuery}' and trashed=false`,

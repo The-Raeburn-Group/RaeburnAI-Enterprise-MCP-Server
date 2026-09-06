@@ -186,7 +186,7 @@ export const githubConnector: EnterpriseConnector = {
               owner: input.owner,
               repo: input.repo,
               title: input.title,
-              body: input.body
+              ...(input.body === undefined ? {} : { body: input.body })
             });
             assertGitHubClassicScopePosture(result.headers as GitHubResponseHeaders, config, 'write');
             return {

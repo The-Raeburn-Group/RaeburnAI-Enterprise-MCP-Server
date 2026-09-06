@@ -85,6 +85,7 @@ describe('GitHub credential posture', () => {
     expect(() =>
       loadConfig({
         GITHUB_ENABLE_WRITES: 'true',
+        GITHUB_READ_TOKEN: 'read-token',
         GITHUB_ALLOWED_REPOSITORIES: 'raebu/repo-a'
       })
     ).toThrow('GITHUB_WRITE_TOKEN');
@@ -92,6 +93,7 @@ describe('GitHub credential posture', () => {
     expect(() =>
       loadConfig({
         GITHUB_ENABLE_WRITES: 'true',
+        GITHUB_READ_TOKEN: 'read-token',
         GITHUB_WRITE_TOKEN: 'write-token',
         GITHUB_ALLOWED_REPOSITORIES: 'raebu/repo-a'
       })
@@ -102,6 +104,7 @@ describe('GitHub credential posture', () => {
     expect(() =>
       loadConfig({
         GITHUB_ENABLE_WRITES: 'true',
+        GITHUB_READ_TOKEN: 'read-token',
         GITHUB_WRITE_TOKEN: 'write-token',
         GITHUB_ALLOWED_REPOSITORIES: 'raebu/repo-a',
         GITHUB_WRITE_ALLOWED_REPOSITORIES: 'raebu/repo-b'

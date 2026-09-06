@@ -30,12 +30,23 @@ export class GoogleOAuthScopeError extends Error {
   }
 }
 
-export function validateGoogleScopeSet(grantedScopes: Iterable<string>, requiredScopes: Iterable<string>): void {
+export function validateGoogleScopeSet(
+  grantedScopes: Iterable<string>,
+  requiredScopes: Iterable<string>,
+  allowedConnectorScopes: Iterable<string> = GOOGLE_CONNECTOR_SCOPES
+): void {
   const granted = new Set([...grantedScopes].map((scope) => scope.trim()).filter(Boolean));
   const required = new Set([...requiredScopes].map((scope) => scope.trim()).filter(Boolean));
+  const allowed = new Set([...allowedConnectorScopes].map((scope) => scope.trim()).filter(Boolean));
+
+  for (const scope of allowed) {
+    if (!GOOGLE_CONNECTOR_SCOPES.has(scope)) {
+      throw new GoogleOAuthScopeError('google_unexpected_scope');
+    }
+  }
 
   for (const scope of required) {
-    if (!GOOGLE_CONNECTOR_SCOPES.has(scope)) {
+    if (!allowed.has(scope)) {
       throw new GoogleOAuthScopeError('google_unexpected_scope');
     }
     if (!granted.has(scope)) {
@@ -44,18 +55,19 @@ export function validateGoogleScopeSet(grantedScopes: Iterable<string>, required
   }
 
   for (const scope of granted) {
-    if (GOOGLE_CONNECTOR_SCOPES.has(scope) || GOOGLE_IDENTITY_SCOPES.has(scope)) continue;
+    if (allowed.has(scope) || GOOGLE_IDENTITY_SCOPES.has(scope)) continue;
     throw new GoogleOAuthScopeError('google_unexpected_scope');
   }
 }
 
 export async function verifyGoogleOAuthScopes(
   oauth2: OAuth2Client,
-  requiredScopes: Iterable<string>
+  requiredScopes: Iterable<string>,
+  allowedConnectorScopes: Iterable<string> = GOOGLE_CONNECTOR_SCOPES
 ): Promise<void> {
   const access = await oauth2.getAccessToken();
   if (!access.token) throw new GoogleOAuthScopeError('google_access_token_missing');
 
   const info = await oauth2.getTokenInfo(access.token);
-  validateGoogleScopeSet(info.scopes ?? [], requiredScopes);
+  validateGoogleScopeSet(info.scopes ?? [], requiredScopes, allowedConnectorScopes);
 }

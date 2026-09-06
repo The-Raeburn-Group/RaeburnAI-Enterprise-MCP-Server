@@ -100,8 +100,7 @@ export function redactSecretText(value: string): string {
   for (const pattern of SECRET_VALUE_PATTERNS) redacted = redacted.replace(pattern, '[redacted]');
   redacted = redacted.replace(
     /\b(token|secret|password|passwd|api[_-]?key|authorization|cookie|credential)\b(\s*[:=]\s*)(["']?)([^\s"',;]{6,})\3/gi,
-    (_match, label: string, separator: string, quote: string) =>
-      `${label}${separator}${quote}[redacted]${quote}`
+    (_match, label: string, separator: string, quote: string) => `${label}${separator}${quote}[redacted]${quote}`
   );
   return redacted;
 }
@@ -142,8 +141,7 @@ export function limitToolResult(value: string, maxBytes: number): string {
 
 export function sanitizeToolOutput(value: unknown, maxBytes: number): SanitizedToolResult {
   const sanitized = maskSecrets(value);
-  const serialized =
-    typeof sanitized === 'string' ? sanitized : (JSON.stringify(sanitized, null, 2) ?? 'null');
+  const serialized = typeof sanitized === 'string' ? sanitized : (JSON.stringify(sanitized, null, 2) ?? 'null');
   const originalBytes = Buffer.byteLength(serialized, 'utf8');
   const text = limitToolResult(serialized, maxBytes);
   const returnedBytes = Buffer.byteLength(text, 'utf8');

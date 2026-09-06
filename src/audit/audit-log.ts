@@ -1,5 +1,6 @@
 import type { Logger } from '../logger.js';
 import { maskSecrets } from '../security/policy.js';
+import type { UntrustedContentAssessment } from '../security/untrusted-content.js';
 
 export interface AuditEvent {
   tenantId: string;
@@ -12,6 +13,7 @@ export interface AuditEvent {
   risk: string;
   input: unknown;
   output?: unknown;
+  contentSecurity?: UntrustedContentAssessment;
   status: 'allowed' | 'blocked' | 'success' | 'error' | 'approval_required';
   reason?: string;
   durationMs?: number;

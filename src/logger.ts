@@ -1,4 +1,4 @@
-import pino from 'pino';
+import { pino } from 'pino';
 import type { AppConfig } from './config.js';
 
 export function createLogger(config: Pick<AppConfig, 'LOG_LEVEL' | 'NODE_ENV'>) {

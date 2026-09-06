@@ -31,7 +31,6 @@ export function createEnterpriseMcpServer(context: ConnectorContext, auditLog: A
         text: JSON.stringify(
           {
             status: 'ok',
-            tenantId: context.identity.tenantId,
             ...connectorStatus(context),
             tools: allTools(context).map((item) => item.name)
           },

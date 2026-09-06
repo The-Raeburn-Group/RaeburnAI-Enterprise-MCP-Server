@@ -21,7 +21,8 @@ export interface BoundedUntrustedText {
 const SIGNAL_PATTERNS: ReadonlyArray<{ signal: InjectionSignal; pattern: RegExp }> = [
   {
     signal: 'instruction_override',
-    pattern: /\b(?:ignore|disregard|forget|override)\b[\s\S]{0,120}\b(?:previous|prior|above|system|developer|instructions?|rules?|policy)\b/i
+    pattern:
+      /\b(?:ignore|disregard|forget|override)\b[\s\S]{0,120}\b(?:previous|prior|above|system|developer|instructions?|rules?|policy)\b/i
   },
   {
     signal: 'authority_impersonation',
@@ -29,7 +30,8 @@ const SIGNAL_PATTERNS: ReadonlyArray<{ signal: InjectionSignal; pattern: RegExp 
   },
   {
     signal: 'secret_exfiltration',
-    pattern: /\b(?:reveal|print|send|upload|exfiltrate|leak|return)\b[\s\S]{0,120}\b(?:secret|token|password|credential|api[ -]?key|system prompt)\b/i
+    pattern:
+      /\b(?:reveal|print|send|upload|exfiltrate|leak|return)\b[\s\S]{0,120}\b(?:secret|token|password|credential|api[ -]?key|system prompt)\b/i
   },
   {
     signal: 'tool_escalation',

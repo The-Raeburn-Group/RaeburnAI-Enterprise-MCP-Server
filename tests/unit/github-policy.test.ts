@@ -30,21 +30,13 @@ describe('GitHub repository boundaries', () => {
       'the-raeburn-group/raeburnai-agentos'
     );
     expect(
-      isGitHubRepositoryAllowed(
-        ['the-raeburn-group/raeburnai-agentos'],
-        'THE-RAEBURN-GROUP',
-        'RAEBURNAI-AGENTOS'
-      )
+      isGitHubRepositoryAllowed(['the-raeburn-group/raeburnai-agentos'], 'THE-RAEBURN-GROUP', 'RAEBURNAI-AGENTOS')
     ).toBe(true);
   });
 
   it('rejects repositories outside the exact allowlist rather than accepting prefix lookalikes', () => {
     expect(
-      isGitHubRepositoryAllowed(
-        ['the-raeburn-group/raeburnai-agentos'],
-        'the-raeburn-group',
-        'raeburnai-agentos-evil'
-      )
+      isGitHubRepositoryAllowed(['the-raeburn-group/raeburnai-agentos'], 'the-raeburn-group', 'raeburnai-agentos-evil')
     ).toBe(false);
     expect(() =>
       assertGitHubRepositoryAllowed(
@@ -120,9 +112,9 @@ describe('GitHub credential posture', () => {
       GITHUB_ALLOWED_REPOSITORIES: 'raebu/repo-a'
     });
 
-    expect(() =>
-      assertGitHubClassicScopePosture({ 'x-oauth-scopes': 'repo, read:user' }, config, 'read')
-    ).toThrow('broad classic OAuth/PAT scopes');
+    expect(() => assertGitHubClassicScopePosture({ 'x-oauth-scopes': 'repo, read:user' }, config, 'read')).toThrow(
+      'broad classic OAuth/PAT scopes'
+    );
     expect(() => assertGitHubClassicScopePosture({}, config, 'read')).not.toThrow();
   });
 });

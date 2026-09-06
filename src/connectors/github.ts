@@ -77,16 +77,15 @@ export function resolveGitHubReadToken(config: AppConfig): string {
 
 export function resolveGitHubWriteToken(config: AppConfig): string {
   if (!config.GITHUB_ENABLE_WRITES) {
-    throw new Error('GitHub write tools are disabled. Set GITHUB_ENABLE_WRITES=true only after approval controls are validated.');
+    throw new Error(
+      'GitHub write tools are disabled. Set GITHUB_ENABLE_WRITES=true only after approval controls are validated.'
+    );
   }
   if (!config.GITHUB_WRITE_TOKEN) throw new Error('GITHUB_WRITE_TOKEN is not configured.');
   return config.GITHUB_WRITE_TOKEN;
 }
 
-function filterAllowedRepositoryResults<T extends { full_name: string }>(
-  repositories: string[],
-  items: T[]
-): T[] {
+function filterAllowedRepositoryResults<T extends { full_name: string }>(repositories: string[], items: T[]): T[] {
   if (repositories.length === 0) return items;
   const allowed = new Set(repositories);
   return items.filter((item) => allowed.has(item.full_name.toLowerCase()));
@@ -102,7 +101,9 @@ async function preflightRepository(
   const response = await client.repos.get({ owner, repo });
   assertGitHubClassicScopePosture(response.headers as GitHubResponseHeaders, config, capability);
   if (capability === 'read' && response.data.permissions?.pull === false) {
-    throw new Error(`Configured GitHub read credential does not have pull access to ${normalizeGitHubRepository(owner, repo)}.`);
+    throw new Error(
+      `Configured GitHub read credential does not have pull access to ${normalizeGitHubRepository(owner, repo)}.`
+    );
   }
   return response;
 }
@@ -111,7 +112,8 @@ export const githubConnector: EnterpriseConnector = {
   name: 'github',
   displayName: 'GitHub',
   description: 'Allowlisted repository, issue and pull request operations for engineering assistants.',
-  configured: (config) => Boolean(config.GITHUB_READ_TOKEN ?? (config.NODE_ENV === 'production' ? undefined : config.GITHUB_TOKEN)),
+  configured: (config) =>
+    Boolean(config.GITHUB_READ_TOKEN ?? (config.NODE_ENV === 'production' ? undefined : config.GITHUB_TOKEN)),
   tools: (context) => {
     const tools: EnterpriseTool[] = [
       tool({

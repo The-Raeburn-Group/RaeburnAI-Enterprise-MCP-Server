@@ -129,11 +129,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       'GITHUB_TOKEN is a development-only compatibility setting. Use GITHUB_READ_TOKEN and a fine-grained token or GitHub App installation token in production.'
     );
   }
-  if (
-    config.NODE_ENV === 'production' &&
-    config.GITHUB_READ_TOKEN &&
-    config.GITHUB_ALLOWED_REPOSITORIES.length === 0
-  ) {
+  if (config.NODE_ENV === 'production' && config.GITHUB_READ_TOKEN && config.GITHUB_ALLOWED_REPOSITORIES.length === 0) {
     throw new Error('GITHUB_ALLOWED_REPOSITORIES is required when GitHub read access is configured in production.');
   }
   if (config.GITHUB_ENABLE_WRITES && !(config.GITHUB_READ_TOKEN ?? config.GITHUB_TOKEN)) {

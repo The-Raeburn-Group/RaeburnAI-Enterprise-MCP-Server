@@ -19,6 +19,19 @@ const optionalNonEmpty = z
     return normalized ? normalized : undefined;
   });
 
+function booleanFromEnv(defaultValue: boolean) {
+  return z.preprocess((value) => {
+    if (value === undefined) return defaultValue;
+    if (typeof value === 'boolean') return value;
+    if (typeof value !== 'string') return value;
+
+    const normalized = value.trim().toLowerCase();
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+    if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+    return value;
+  }, z.boolean());
+}
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
@@ -30,9 +43,9 @@ const EnvSchema = z.object({
   ENABLED_CONNECTORS: csv,
   ALLOWED_TOOLS: csv,
   DENIED_TOOLS: csv,
-  REQUIRE_APPROVAL_FOR_WRITES: z.coerce.boolean().default(true),
-  AUDIT_LOG_ENABLED: z.coerce.boolean().default(true),
-  AUDIT_LOG_REDACT_SECRETS: z.coerce.boolean().default(true),
+  REQUIRE_APPROVAL_FOR_WRITES: booleanFromEnv(true),
+  AUDIT_LOG_ENABLED: booleanFromEnv(true),
+  AUDIT_LOG_REDACT_SECRETS: booleanFromEnv(true),
   MAX_TOOL_RESULT_BYTES: z.coerce.number().int().min(1024).max(1_000_000).default(250_000),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -70,6 +83,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error(
       'REQUIRE_APPROVAL_FOR_WRITES must stay true in production unless a reviewed release explicitly changes this guardrail.'
     );
+  }
+  if (config.NODE_ENV === 'production' && !config.AUDIT_LOG_REDACT_SECRETS) {
+    throw new Error('AUDIT_LOG_REDACT_SECRETS must stay true in production to prevent connector secret leakage.');
   }
   if (config.NODE_ENV === 'production' && !config.MCP_TENANT_ID) {
     throw new Error(

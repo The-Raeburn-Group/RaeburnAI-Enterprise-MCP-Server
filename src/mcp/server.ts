@@ -4,13 +4,16 @@ import { ZodError } from 'zod';
 import type { AuditLog } from '../audit/audit-log.js';
 import type { ConnectorContext, EnterpriseTool } from '../connectors/types.js';
 import { allTools, connectors, configuredConnectors, enabledConnectors } from '../connectors/index.js';
-import { evaluateToolPolicy, limitToolResult } from '../security/policy.js';
+import { evaluateToolPolicy, redactSecretText, sanitizeToolOutput } from '../security/policy.js';
 
 export interface ToolExecutionResult {
   ok: boolean;
   text: string;
   output?: unknown;
   reason?: string;
+  truncated?: boolean;
+  originalBytes?: number;
+  returnedBytes?: number;
 }
 
 export function createEnterpriseMcpServer(context: ConnectorContext, auditLog: AuditLog): McpServer {
@@ -99,30 +102,34 @@ export async function executeEnterpriseTool(
 
   try {
     const parsed = enterpriseTool.inputSchema.parse(input);
-    const output = await enterpriseTool.run(parsed, context);
-    const text = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+    const rawOutput = await enterpriseTool.run(parsed, context);
+    const sanitized = sanitizeToolOutput(rawOutput, context.config.MAX_TOOL_RESULT_BYTES);
     auditLog.record({
       ...identity,
       tool: enterpriseTool.name,
       connector: enterpriseTool.connector,
       risk: enterpriseTool.risk,
       input: parsed,
-      output,
+      output: rawOutput,
       status: 'success',
       durationMs: Date.now() - startedAt
     });
     return {
       ok: true,
-      text: limitToolResult(text, context.config.MAX_TOOL_RESULT_BYTES),
-      output
+      text: sanitized.text,
+      output: sanitized.output,
+      truncated: sanitized.truncated,
+      originalBytes: sanitized.originalBytes,
+      returnedBytes: sanitized.returnedBytes
     };
   } catch (error) {
-    const message =
+    const rawMessage =
       error instanceof ZodError
         ? error.issues.map((issue) => issue.message).join('; ')
         : error instanceof Error
           ? error.message
           : 'Unknown tool error';
+    const message = redactSecretText(rawMessage);
     context.logger.warn(
       {
         tenantId: identity.tenantId,

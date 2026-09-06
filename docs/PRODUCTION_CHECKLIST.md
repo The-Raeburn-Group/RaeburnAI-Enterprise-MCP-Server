@@ -20,11 +20,11 @@ Use a Google Cloud project owned by the organisation rather than an individual's
 
 Request only the scopes needed for the Google connectors enabled in `ENABLED_CONNECTORS`:
 
-| Connector | Required API scope |
-| --- | --- |
-| Gmail | `https://www.googleapis.com/auth/gmail.readonly` |
-| Google Calendar | `https://www.googleapis.com/auth/calendar.readonly` |
-| Google Drive | `https://www.googleapis.com/auth/drive.metadata.readonly` |
+| Connector       | Required API scope                                        |
+| --------------- | --------------------------------------------------------- |
+| Gmail           | `https://www.googleapis.com/auth/gmail.readonly`          |
+| Google Calendar | `https://www.googleapis.com/auth/calendar.readonly`       |
+| Google Drive    | `https://www.googleapis.com/auth/drive.metadata.readonly` |
 
 Identity-only scopes such as `openid`, `email`, `profile`, `https://www.googleapis.com/auth/userinfo.email` and `https://www.googleapis.com/auth/userinfo.profile` may also be present. Broader Google API scopes are rejected, including full Drive access and Gmail modification scopes. A read-only scope for a Google connector that is disabled is also rejected, so production tokens cannot silently retain access that the deployment no longer needs.
 
@@ -39,16 +39,16 @@ Before enabling Google Workspace in production:
 
 ## Connector review
 
-| Connector        | Review item                                                    |
-| ---------------- | -------------------------------------------------------------- |
+| Connector        | Review item                                                            |
+| ---------------- | ---------------------------------------------------------------------- |
 | Google Workspace | OAuth consent screen, verified read-only scopes, refresh-token storage |
-| GitHub           | Fine-grained token or GitHub App permissions                   |
-| Slack            | Bot scopes, channel visibility, posting guardrails             |
-| SharePoint       | Microsoft Graph application permissions                        |
-| Salesforce       | Connected app policy and IP restrictions                       |
-| HubSpot          | Private app scopes                                             |
-| Notion           | Integration page/database access                               |
-| Supabase         | Service role key storage and RLS posture                       |
+| GitHub           | Fine-grained token or GitHub App permissions                           |
+| Slack            | Bot scopes, channel visibility, posting guardrails                     |
+| SharePoint       | Microsoft Graph application permissions                                |
+| Salesforce       | Connected app policy and IP restrictions                               |
+| HubSpot          | Private app scopes                                                     |
+| Notion           | Integration page/database access                                       |
+| Supabase         | Service role key storage and RLS posture                               |
 
 ## First production run
 

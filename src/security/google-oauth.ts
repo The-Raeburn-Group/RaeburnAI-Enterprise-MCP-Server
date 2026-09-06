@@ -20,10 +20,7 @@ const GOOGLE_IDENTITY_SCOPES = new Set([
 
 export class GoogleOAuthScopeError extends Error {
   constructor(
-    public readonly code:
-      | 'google_access_token_missing'
-      | 'google_required_scope_missing'
-      | 'google_unexpected_scope'
+    public readonly code: 'google_access_token_missing' | 'google_required_scope_missing' | 'google_unexpected_scope'
   ) {
     super(code);
     this.name = 'GoogleOAuthScopeError';

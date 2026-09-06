@@ -47,6 +47,16 @@ describe('Google OAuth least-privilege scope policy', () => {
     ).toThrowError(new GoogleOAuthScopeError('google_unexpected_scope'));
   });
 
+  it('rejects a safe read scope when its connector is disabled', () => {
+    expect(() =>
+      validateGoogleScopeSet(
+        [GOOGLE_GMAIL_READ_SCOPE, GOOGLE_DRIVE_METADATA_READ_SCOPE],
+        [GOOGLE_GMAIL_READ_SCOPE],
+        [GOOGLE_GMAIL_READ_SCOPE]
+      )
+    ).toThrowError(new GoogleOAuthScopeError('google_unexpected_scope'));
+  });
+
   it('validates the actual access token scopes returned by Google token info', async () => {
     const getAccessToken = vi.fn(async () => ({ token: 'access-token' }));
     const getTokenInfo = vi.fn(async () => ({ scopes: [GOOGLE_GMAIL_READ_SCOPE, 'openid'] }));

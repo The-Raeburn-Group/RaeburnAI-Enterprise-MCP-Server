@@ -16,16 +16,16 @@
 
 ## Connector review
 
-| Connector | Review item |
-|---|---|
+| Connector        | Review item                                                    |
+| ---------------- | -------------------------------------------------------------- |
 | Google Workspace | OAuth consent screen, restricted scopes, refresh-token storage |
-| GitHub | Fine-grained token or GitHub App permissions |
-| Slack | Bot scopes, channel visibility, posting guardrails |
-| SharePoint | Microsoft Graph application permissions |
-| Salesforce | Connected app policy and IP restrictions |
-| HubSpot | Private app scopes |
-| Notion | Integration page/database access |
-| Supabase | Service role key storage and RLS posture |
+| GitHub           | Fine-grained token or GitHub App permissions                   |
+| Slack            | Bot scopes, channel visibility, posting guardrails             |
+| SharePoint       | Microsoft Graph application permissions                        |
+| Salesforce       | Connected app policy and IP restrictions                       |
+| HubSpot          | Private app scopes                                             |
+| Notion           | Integration page/database access                               |
+| Supabase         | Service role key storage and RLS posture                       |
 
 ## First production run
 

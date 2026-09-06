@@ -44,7 +44,10 @@ describe('configuration', () => {
 describe('tool policy', () => {
   it('requires review for write tools by default', () => {
     const config = loadConfig({});
-    expect(evaluateToolPolicy(config, 'slack.post_message', 'write')).toMatchObject({ allowed: true, approvalRequired: true });
+    expect(evaluateToolPolicy(config, 'slack.post_message', 'write')).toMatchObject({
+      allowed: true,
+      approvalRequired: true
+    });
   });
 
   it('blocks denied tools', () => {

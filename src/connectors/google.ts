@@ -17,14 +17,18 @@ export const gmailConnector: EnterpriseConnector = {
   name: 'gmail',
   displayName: 'Gmail',
   description: 'Search and read Gmail messages with write actions guarded by approval.',
-  configured: (config) => Boolean(config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET && config.GOOGLE_REFRESH_TOKEN),
+  configured: (config) =>
+    Boolean(config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET && config.GOOGLE_REFRESH_TOKEN),
   tools: () => [
     tool({
       name: 'gmail.search_messages',
       connector: 'gmail',
       risk: 'read',
       description: 'Search Gmail messages using Gmail search syntax.',
-      inputSchema: z.object({ query: z.string().min(1).max(500).default('in:inbox'), limit: z.number().int().min(1).max(25).default(10) }),
+      inputSchema: z.object({
+        query: z.string().min(1).max(500).default('in:inbox'),
+        limit: z.number().int().min(1).max(25).default(10)
+      }),
       async run(input, { config }) {
         const gmail = google.gmail({ version: 'v1', auth: googleAuth(config) });
         const result = await gmail.users.messages.list({ userId: 'me', q: input.query, maxResults: input.limit });
@@ -57,10 +61,19 @@ export const calendarConnector: EnterpriseConnector = {
       connector: 'calendar',
       risk: 'read',
       description: 'List upcoming calendar events.',
-      inputSchema: z.object({ calendarId: z.string().min(1).max(200).default('primary'), limit: z.number().int().min(1).max(50).default(10) }),
+      inputSchema: z.object({
+        calendarId: z.string().min(1).max(200).default('primary'),
+        limit: z.number().int().min(1).max(50).default(10)
+      }),
       async run(input, { config }) {
         const calendar = google.calendar({ version: 'v3', auth: googleAuth(config) });
-        const result = await calendar.events.list({ calendarId: input.calendarId, maxResults: input.limit, singleEvents: true, orderBy: 'startTime', timeMin: new Date().toISOString() });
+        const result = await calendar.events.list({
+          calendarId: input.calendarId,
+          maxResults: input.limit,
+          singleEvents: true,
+          orderBy: 'startTime',
+          timeMin: new Date().toISOString()
+        });
         return result.data.items ?? [];
       }
     })
@@ -82,7 +95,11 @@ export const googleDriveConnector: EnterpriseConnector = {
       async run(input, { config }) {
         const drive = google.drive({ version: 'v3', auth: googleAuth(config) });
         const safeQuery = input.query.replaceAll("'", "\\'");
-        const result = await drive.files.list({ q: `name contains '${safeQuery}' and trashed=false`, pageSize: input.limit, fields: 'files(id,name,mimeType,webViewLink,modifiedTime)' });
+        const result = await drive.files.list({
+          q: `name contains '${safeQuery}' and trashed=false`,
+          pageSize: input.limit,
+          fields: 'files(id,name,mimeType,webViewLink,modifiedTime)'
+        });
         return result.data.files ?? [];
       }
     })

@@ -4,7 +4,12 @@ const csv = z
   .string()
   .optional()
   .default('')
-  .transform((value) => value.split(',').map((item) => item.trim()).filter(Boolean));
+  .transform((value) =>
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
 
 const optionalNonEmpty = z
   .string()
@@ -62,10 +67,14 @@ export type ConnectorName =
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const config = EnvSchema.parse(env);
   if (config.NODE_ENV === 'production' && !config.REQUIRE_APPROVAL_FOR_WRITES) {
-    throw new Error('REQUIRE_APPROVAL_FOR_WRITES must stay true in production unless a reviewed release explicitly changes this guardrail.');
+    throw new Error(
+      'REQUIRE_APPROVAL_FOR_WRITES must stay true in production unless a reviewed release explicitly changes this guardrail.'
+    );
   }
   if (config.NODE_ENV === 'production' && !config.MCP_TENANT_ID) {
-    throw new Error('MCP_TENANT_ID is required in production so connector credentials cannot be shared across unspecified tenants.');
+    throw new Error(
+      'MCP_TENANT_ID is required in production so connector credentials cannot be shared across unspecified tenants.'
+    );
   }
   if (
     config.NODE_ENV === 'production' &&

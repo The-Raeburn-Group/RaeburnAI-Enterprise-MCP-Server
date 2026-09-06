@@ -148,14 +148,24 @@ export async function executeEnterpriseTool(
   }
 }
 
-function registerTool(server: McpServer, enterpriseTool: EnterpriseTool, context: ConnectorContext, auditLog: AuditLog) {
-  server.tool(enterpriseTool.name, enterpriseTool.description, enterpriseTool.inputSchema.shape, async (input: unknown) => {
-    const result = await executeEnterpriseTool(enterpriseTool, input, context, auditLog);
-    return {
-      content: [{ type: 'text', text: result.text }],
-      ...(result.ok ? {} : { isError: true })
-    };
-  });
+function registerTool(
+  server: McpServer,
+  enterpriseTool: EnterpriseTool,
+  context: ConnectorContext,
+  auditLog: AuditLog
+) {
+  server.tool(
+    enterpriseTool.name,
+    enterpriseTool.description,
+    enterpriseTool.inputSchema.shape,
+    async (input: unknown) => {
+      const result = await executeEnterpriseTool(enterpriseTool, input, context, auditLog);
+      return {
+        content: [{ type: 'text', text: result.text }],
+        ...(result.ok ? {} : { isError: true })
+      };
+    }
+  );
 }
 
 export async function startStdioServer(server: McpServer) {

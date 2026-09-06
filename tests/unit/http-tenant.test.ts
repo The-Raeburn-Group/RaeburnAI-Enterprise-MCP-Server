@@ -28,10 +28,7 @@ function trustedHeaders(overrides: Record<string, string> = {}) {
 
 describe('Chain request authentication', () => {
   it('accepts only the configured tenant and preserves trusted provenance', () => {
-    const identity = authenticateChainRequest(
-      { ...trustedHeaders(), 'x-raeburn-approval-id': 'approval-1' },
-      config()
-    );
+    const identity = authenticateChainRequest({ ...trustedHeaders(), 'x-raeburn-approval-id': 'approval-1' }, config());
     expect(identity).toEqual({
       tenantId: 'tenant-a',
       actorId: 'actor-a',
@@ -43,17 +40,14 @@ describe('Chain request authentication', () => {
 
   it('rejects an invalid service token', () => {
     expect(() =>
-      authenticateChainRequest(
-        trustedHeaders({ authorization: 'Bearer definitely-wrong-token-value' }),
-        config()
-      )
+      authenticateChainRequest(trustedHeaders({ authorization: 'Bearer definitely-wrong-token-value' }), config())
     ).toThrow('invalid_chain_service_token');
   });
 
   it('rejects a valid Chain token carrying another tenant', () => {
-    expect(() =>
-      authenticateChainRequest(trustedHeaders({ 'x-tenant-id': 'tenant-b' }), config())
-    ).toThrow('tenant_mismatch');
+    expect(() => authenticateChainRequest(trustedHeaders({ 'x-tenant-id': 'tenant-b' }), config())).toThrow(
+      'tenant_mismatch'
+    );
   });
 });
 
@@ -62,12 +56,12 @@ describe('tenant-bound HTTP bridge', () => {
 
   afterEach(async () => {
     await Promise.all(
-      servers.splice(0).map(
-        (server) =>
-          new Promise<void>((resolve, reject) =>
-            server.close((error) => (error ? reject(error) : resolve()))
-          )
-      )
+      servers
+        .splice(0)
+        .map(
+          (server) =>
+            new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
+        )
     );
   });
 

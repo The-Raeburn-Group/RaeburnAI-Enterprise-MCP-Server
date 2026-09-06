@@ -1,7 +1,14 @@
 import type { ConnectorContext, EnterpriseConnector, EnterpriseTool } from './types.js';
 import { calendarConnector, gmailConnector, googleDriveConnector } from './google.js';
 import { githubConnector } from './github.js';
-import { hubSpotConnector, notionConnector, salesforceConnector, sharePointConnector, slackConnector, supabaseConnector } from './saas.js';
+import {
+  hubSpotConnector,
+  notionConnector,
+  salesforceConnector,
+  sharePointConnector,
+  slackConnector,
+  supabaseConnector
+} from './saas.js';
 import { isConnectorEnabled } from '../config.js';
 
 export const connectors: EnterpriseConnector[] = [

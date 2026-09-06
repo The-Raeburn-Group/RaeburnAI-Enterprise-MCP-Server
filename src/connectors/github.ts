@@ -23,7 +23,12 @@ export const githubConnector: EnterpriseConnector = {
         const token = config.GITHUB_TOKEN;
         if (!token) throw new Error('GITHUB_TOKEN is not configured');
         const result = await makeGitHubClient(token).search.repos({ q: input.query, per_page: input.limit });
-        return result.data.items.map((repo) => ({ fullName: repo.full_name, description: repo.description, url: repo.html_url, stars: repo.stargazers_count }));
+        return result.data.items.map((repo) => ({
+          fullName: repo.full_name,
+          description: repo.description,
+          url: repo.html_url,
+          stars: repo.stargazers_count
+        }));
       }
     }),
     tool({
@@ -31,12 +36,26 @@ export const githubConnector: EnterpriseConnector = {
       connector: 'github',
       risk: 'read',
       description: 'List issues for a repository.',
-      inputSchema: z.object({ owner: z.string(), repo: z.string(), state: z.enum(['open', 'closed', 'all']).default('open') }),
+      inputSchema: z.object({
+        owner: z.string(),
+        repo: z.string(),
+        state: z.enum(['open', 'closed', 'all']).default('open')
+      }),
       async run(input, { config }) {
         const token = config.GITHUB_TOKEN;
         if (!token) throw new Error('GITHUB_TOKEN is not configured');
-        const result = await makeGitHubClient(token).issues.listForRepo({ owner: input.owner, repo: input.repo, state: input.state, per_page: 50 });
-        return result.data.map((issue) => ({ number: issue.number, title: issue.title, state: issue.state, url: issue.html_url }));
+        const result = await makeGitHubClient(token).issues.listForRepo({
+          owner: input.owner,
+          repo: input.repo,
+          state: input.state,
+          per_page: 50
+        });
+        return result.data.map((issue) => ({
+          number: issue.number,
+          title: issue.title,
+          state: issue.state,
+          url: issue.html_url
+        }));
       }
     })
   ]

@@ -36,10 +36,7 @@ function equalSecret(provided: string, expected: string): boolean {
   return timingSafeEqual(left, right);
 }
 
-export function authenticateChainRequest(
-  headers: IncomingHttpHeaders,
-  config: AppConfig
-): ExecutionIdentity {
+export function authenticateChainRequest(headers: IncomingHttpHeaders, config: AppConfig): ExecutionIdentity {
   const expectedToken = config.RAEBURN_CHAIN_SERVICE_TOKEN;
   if (!expectedToken) throw new ChainRequestError(401, 'chain_service_auth_unconfigured');
 
@@ -158,11 +155,7 @@ export function createTenantBoundHttpServer(
   });
 }
 
-export async function startTenantBoundHttpServer(
-  config: AppConfig,
-  logger: Logger,
-  auditLog: AuditLog
-): Promise<void> {
+export async function startTenantBoundHttpServer(config: AppConfig, logger: Logger, auditLog: AuditLog): Promise<void> {
   const server = createTenantBoundHttpServer({ config, logger }, auditLog);
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);

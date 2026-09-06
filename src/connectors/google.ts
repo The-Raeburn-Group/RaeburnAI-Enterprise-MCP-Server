@@ -10,20 +10,32 @@ import {
 import type { EnterpriseConnector } from './types.js';
 import { tool } from './types.js';
 
+function allowedGoogleScopes(config: AppConfig): string[] {
+  const enabled = new Set(config.ENABLED_CONNECTORS);
+  const allConnectorsEnabled = enabled.size === 0;
+  const scopes: string[] = [];
+
+  if (allConnectorsEnabled || enabled.has('gmail')) scopes.push(GOOGLE_GMAIL_READ_SCOPE);
+  if (allConnectorsEnabled || enabled.has('calendar')) scopes.push(GOOGLE_CALENDAR_READ_SCOPE);
+  if (allConnectorsEnabled || enabled.has('google-drive')) scopes.push(GOOGLE_DRIVE_METADATA_READ_SCOPE);
+
+  return scopes;
+}
+
 async function googleAuth(config: AppConfig, requiredScopes: string[]) {
   if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET || !config.GOOGLE_REFRESH_TOKEN) {
     throw new Error('Google OAuth credentials are not configured');
   }
   const oauth2 = new google.auth.OAuth2(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET);
   oauth2.setCredentials({ refresh_token: config.GOOGLE_REFRESH_TOKEN });
-  await verifyGoogleOAuthScopes(oauth2, requiredScopes);
+  await verifyGoogleOAuthScopes(oauth2, requiredScopes, allowedGoogleScopes(config));
   return oauth2;
 }
 
 export const gmailConnector: EnterpriseConnector = {
   name: 'gmail',
   displayName: 'Gmail',
-  description: 'Search and read Gmail messages with write actions guarded by approval.',
+  description: 'Search and read Gmail messages using a verified read-only OAuth scope.',
   configured: (config) =>
     Boolean(config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET && config.GOOGLE_REFRESH_TOKEN),
   tools: () => [
@@ -66,7 +78,7 @@ export const gmailConnector: EnterpriseConnector = {
 export const calendarConnector: EnterpriseConnector = {
   name: 'calendar',
   displayName: 'Google Calendar',
-  description: 'Read calendar events and create approved scheduling actions.',
+  description: 'List calendar events using a verified read-only OAuth scope.',
   configured: (config) => gmailConnector.configured(config),
   tools: () => [
     tool({
@@ -99,7 +111,7 @@ export const calendarConnector: EnterpriseConnector = {
 export const googleDriveConnector: EnterpriseConnector = {
   name: 'google-drive',
   displayName: 'Google Drive',
-  description: 'Search Google Drive and retrieve file metadata for knowledge workflows.',
+  description: 'Search Drive metadata using a verified metadata-read-only OAuth scope.',
   configured: (config) => gmailConnector.configured(config),
   tools: () => [
     tool({

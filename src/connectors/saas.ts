@@ -111,10 +111,10 @@ export const salesforceConnector: EnterpriseConnector = {
           )
       }),
       async run(input, { config }) {
-        const conn = new jsforce.Connection({
-          instanceUrl: config.SALESFORCE_INSTANCE_URL,
-          accessToken: config.SALESFORCE_ACCESS_TOKEN
-        });
+        const instanceUrl = config.SALESFORCE_INSTANCE_URL;
+        const accessToken = config.SALESFORCE_ACCESS_TOKEN;
+        if (!instanceUrl || !accessToken) throw new Error('Salesforce credentials are not configured');
+        const conn = new jsforce.Connection({ instanceUrl, accessToken });
         return conn.query(input.query);
       }
     })

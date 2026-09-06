@@ -37,12 +37,32 @@ Before enabling Google Workspace in production:
 - [ ] Rotate/revoke the refresh token when connector access changes and issue a new token with the reduced scope set.
 - [ ] Run a read-only pilot and confirm the MCP server rejects a deliberately over-scoped token.
 
+## GitHub least privilege
+
+Production GitHub access is split into independent read and write credentials. `GITHUB_TOKEN` is retained only for local/development compatibility and is rejected in production. Prefer a GitHub App installation token or fine-grained personal access token restricted to the exact repositories used by the deployment.
+
+Read access:
+
+- [ ] Create `GITHUB_READ_TOKEN` as a fine-grained token or GitHub App installation token with read-only permissions required by the enabled tools.
+- [ ] Set `GITHUB_ALLOWED_REPOSITORIES` to explicit `owner/repository` entries. Production refuses a configured read token without this allowlist.
+- [ ] Confirm `github.search_repositories` returns only allowlisted repositories and `github.list_issues` rejects a lookalike or non-allowlisted repository.
+- [ ] Confirm broad classic PAT/OAuth repository scopes such as `repo` or `public_repo` are rejected by the runtime.
+
+Write access is a separate opt-in boundary:
+
+- [ ] Leave `GITHUB_ENABLE_WRITES=false` for read-only pilots.
+- [ ] When a write use case is approved, create a distinct `GITHUB_WRITE_TOKEN` rather than reusing the read credential.
+- [ ] Set `GITHUB_WRITE_ALLOWED_REPOSITORIES` to the minimum subset of `GITHUB_ALLOWED_REPOSITORIES` that may receive writes.
+- [ ] Grant only the fine-grained GitHub permission required by the write tool; for `github.create_issue`, do not grant unrelated repository administration or content-write permissions.
+- [ ] Verify the Chain approval flow before enabling writes, then confirm a request outside the write allowlist is rejected before GitHub API execution.
+- [ ] Store both credentials in the production secret manager and rotate them independently.
+
 ## Connector review
 
 | Connector        | Review item                                                            |
 | ---------------- | ---------------------------------------------------------------------- |
 | Google Workspace | OAuth consent screen, verified read-only scopes, refresh-token storage |
-| GitHub           | Fine-grained token or GitHub App permissions                           |
+| GitHub           | Fine-grained/App tokens, repository allowlists, split read/write creds |
 | Slack            | Bot scopes, channel visibility, posting guardrails                     |
 | SharePoint       | Microsoft Graph application permissions                                |
 | Salesforce       | Connected app policy and IP restrictions                               |

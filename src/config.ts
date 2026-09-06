@@ -11,6 +11,25 @@ const csv = z
       .filter(Boolean)
   );
 
+const repositoryCsv = z
+  .string()
+  .optional()
+  .default('')
+  .transform((value) =>
+    Array.from(
+      new Set(
+        value
+          .split(',')
+          .map((item) => item.trim().toLowerCase())
+          .filter(Boolean)
+      )
+    )
+  )
+  .refine(
+    (repositories) => repositories.every((repository) => /^[a-z0-9_.-]+\/[a-z0-9_.-]+$/.test(repository)),
+    'GitHub repository allowlists must contain owner/repository entries.'
+  );
+
 const optionalNonEmpty = z
   .string()
   .optional()
@@ -50,7 +69,12 @@ const EnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REFRESH_TOKEN: z.string().optional(),
-  GITHUB_TOKEN: z.string().optional(),
+  GITHUB_TOKEN: optionalNonEmpty,
+  GITHUB_READ_TOKEN: optionalNonEmpty,
+  GITHUB_WRITE_TOKEN: optionalNonEmpty,
+  GITHUB_ALLOWED_REPOSITORIES: repositoryCsv,
+  GITHUB_WRITE_ALLOWED_REPOSITORIES: repositoryCsv,
+  GITHUB_ENABLE_WRITES: booleanFromEnv(false),
   SLACK_BOT_TOKEN: z.string().optional(),
   MICROSOFT_TENANT_ID: z.string().optional(),
   MICROSOFT_CLIENT_ID: z.string().optional(),
@@ -98,6 +122,36 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     (!config.RAEBURN_CHAIN_SERVICE_TOKEN || config.RAEBURN_CHAIN_SERVICE_TOKEN.length < 24)
   ) {
     throw new Error('RAEBURN_CHAIN_SERVICE_TOKEN of at least 24 characters is required for production HTTP transport.');
+  }
+
+  if (config.NODE_ENV === 'production' && config.GITHUB_TOKEN) {
+    throw new Error(
+      'GITHUB_TOKEN is a development-only compatibility setting. Use GITHUB_READ_TOKEN and a fine-grained token or GitHub App installation token in production.'
+    );
+  }
+  if (config.NODE_ENV === 'production' && config.GITHUB_READ_TOKEN && config.GITHUB_ALLOWED_REPOSITORIES.length === 0) {
+    throw new Error('GITHUB_ALLOWED_REPOSITORIES is required when GitHub read access is configured in production.');
+  }
+  if (config.GITHUB_ENABLE_WRITES && !(config.GITHUB_READ_TOKEN ?? config.GITHUB_TOKEN)) {
+    throw new Error('A GitHub read credential is required before write tools can be enabled.');
+  }
+  if (config.GITHUB_ENABLE_WRITES && !config.GITHUB_WRITE_TOKEN) {
+    throw new Error('GITHUB_WRITE_TOKEN is required when GITHUB_ENABLE_WRITES=true.');
+  }
+  if (config.GITHUB_ENABLE_WRITES && config.GITHUB_WRITE_ALLOWED_REPOSITORIES.length === 0) {
+    throw new Error('GITHUB_WRITE_ALLOWED_REPOSITORIES is required when GitHub writes are enabled.');
+  }
+  if (config.NODE_ENV === 'production' && config.GITHUB_WRITE_TOKEN && !config.GITHUB_ENABLE_WRITES) {
+    throw new Error('Remove GITHUB_WRITE_TOKEN or explicitly set GITHUB_ENABLE_WRITES=true in production.');
+  }
+  const readRepositories = new Set(config.GITHUB_ALLOWED_REPOSITORIES);
+  const writeOutsideReadBoundary = config.GITHUB_WRITE_ALLOWED_REPOSITORIES.filter(
+    (repository) => !readRepositories.has(repository)
+  );
+  if (writeOutsideReadBoundary.length > 0) {
+    throw new Error(
+      `Every GITHUB_WRITE_ALLOWED_REPOSITORIES entry must also be present in GITHUB_ALLOWED_REPOSITORIES: ${writeOutsideReadBoundary.join(', ')}`
+    );
   }
   return config;
 }

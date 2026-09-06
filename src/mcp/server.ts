@@ -5,12 +5,18 @@ import type { AuditLog } from '../audit/audit-log.js';
 import type { ConnectorContext, EnterpriseTool } from '../connectors/types.js';
 import { allTools, connectors, configuredConnectors, enabledConnectors } from '../connectors/index.js';
 import { evaluateToolPolicy, redactSecretText, sanitizeToolOutput } from '../security/policy.js';
+import {
+  assessUntrustedContent,
+  type UntrustedContentAssessment,
+  wrapUntrustedToolText
+} from '../security/untrusted-content.js';
 
 export interface ToolExecutionResult {
   ok: boolean;
   text: string;
   output?: unknown;
   reason?: string;
+  security?: UntrustedContentAssessment;
   truncated?: boolean;
   originalBytes?: number;
   returnedBytes?: number;
@@ -104,6 +110,8 @@ export async function executeEnterpriseTool(
     const parsed = enterpriseTool.inputSchema.parse(input);
     const rawOutput = await enterpriseTool.run(parsed, context);
     const sanitized = sanitizeToolOutput(rawOutput, context.config.MAX_TOOL_RESULT_BYTES);
+    const security = assessUntrustedContent(sanitized.output);
+    const wrapped = wrapUntrustedToolText(sanitized.text, security, context.config.MAX_TOOL_RESULT_BYTES);
     auditLog.record({
       ...identity,
       tool: enterpriseTool.name,
@@ -111,16 +119,18 @@ export async function executeEnterpriseTool(
       risk: enterpriseTool.risk,
       input: parsed,
       output: rawOutput,
+      contentSecurity: security,
       status: 'success',
       durationMs: Date.now() - startedAt
     });
     return {
       ok: true,
-      text: sanitized.text,
+      text: wrapped.text,
       output: sanitized.output,
-      truncated: sanitized.truncated,
+      security,
+      truncated: sanitized.truncated || wrapped.truncated,
       originalBytes: sanitized.originalBytes,
-      returnedBytes: sanitized.returnedBytes
+      returnedBytes: Buffer.byteLength(wrapped.text, 'utf8')
     };
   } catch (error) {
     const rawMessage =
@@ -130,6 +140,8 @@ export async function executeEnterpriseTool(
           ? error.message
           : 'Unknown tool error';
     const message = redactSecretText(rawMessage);
+    const security = assessUntrustedContent(message);
+    const wrapped = wrapUntrustedToolText(message, security, context.config.MAX_TOOL_RESULT_BYTES);
     context.logger.warn(
       {
         tenantId: identity.tenantId,
@@ -146,11 +158,12 @@ export async function executeEnterpriseTool(
       connector: enterpriseTool.connector,
       risk: enterpriseTool.risk,
       input,
+      contentSecurity: security,
       status: 'error',
       reason: message,
       durationMs: Date.now() - startedAt
     });
-    return { ok: false, text: message, reason: message };
+    return { ok: false, text: wrapped.text, reason: message, security };
   }
 }
 

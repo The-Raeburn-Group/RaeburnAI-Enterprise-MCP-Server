@@ -68,6 +68,8 @@ docker compose up --build
 
 See `.env.example`. Key controls include `ENABLED_CONNECTORS`, `ALLOWED_TOOLS`, `DENIED_TOOLS`, `REQUIRE_APPROVAL_FOR_WRITES`, `AUDIT_LOG_ENABLED`, `MAX_TOOL_RESULT_BYTES` and connector-specific OAuth/API credentials.
 
+GitHub production deployments use `GITHUB_READ_TOKEN` plus an explicit `GITHUB_ALLOWED_REPOSITORIES` boundary. Writes remain disabled unless `GITHUB_ENABLE_WRITES=true`; when enabled they require a separate `GITHUB_WRITE_TOKEN` and the narrower `GITHUB_WRITE_ALLOWED_REPOSITORIES` list. The legacy `GITHUB_TOKEN` setting is development-only.
+
 ## Usage examples
 
 See `examples/mcp-client-config.json` and `examples/demo-data.json`.
@@ -77,7 +79,9 @@ See `examples/mcp-client-config.json` and `examples/demo-data.json`.
 - All tools are classified as `read`, `write` or `admin`.
 - Write/admin tools require human approval by default.
 - Production mode refuses to start if write approval is disabled.
-- Audit logs redact secret-like fields.
+- Audit logs redact secret-like fields and secret-like string values.
+- Google Workspace validates actual issued token scopes and rejects broader API scopes.
+- GitHub production access is repository-allowlisted, rejects broad classic repository scopes and separates read/write credentials.
 - Salesforce is read-only; Supabase can be table-allowlisted.
 - Use organisation-owned apps, service accounts and least-privilege scopes.
 

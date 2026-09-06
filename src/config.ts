@@ -136,6 +136,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   ) {
     throw new Error('GITHUB_ALLOWED_REPOSITORIES is required when GitHub read access is configured in production.');
   }
+  if (config.GITHUB_ENABLE_WRITES && !(config.GITHUB_READ_TOKEN ?? config.GITHUB_TOKEN)) {
+    throw new Error('A GitHub read credential is required before write tools can be enabled.');
+  }
   if (config.GITHUB_ENABLE_WRITES && !config.GITHUB_WRITE_TOKEN) {
     throw new Error('GITHUB_WRITE_TOKEN is required when GITHUB_ENABLE_WRITES=true.');
   }

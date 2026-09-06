@@ -137,7 +137,10 @@ export function createTenantBoundHttpServer(
           tool: enterpriseTool.name,
           tenantId: identity.tenantId,
           requestId: identity.requestId,
-          ...(result.ok ? { output: result.output } : { error: result.reason ?? result.text })
+          ...(result.security ? { security: result.security } : {}),
+          ...(result.ok
+            ? { output: result.output }
+            : { error: result.security ? result.text : (result.reason ?? result.text) })
         });
       }
 

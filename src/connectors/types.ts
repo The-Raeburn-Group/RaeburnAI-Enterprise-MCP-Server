@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 import type { AppConfig, ConnectorName } from '../config.js';
 import type { Logger } from '../logger.js';
 import type { ToolRisk } from '../security/policy.js';

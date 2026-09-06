@@ -6,11 +6,12 @@ import { loadConfig } from '../../src/config.js';
 import { createLogger } from '../../src/logger.js';
 import { executeEnterpriseTool } from '../../src/mcp/server.js';
 
-function context(approvalId?: string): ConnectorContext {
+function context(approvalId?: string, overrides: NodeJS.ProcessEnv = {}): ConnectorContext {
   const config = loadConfig({
     MCP_TENANT_ID: 'tenant-a',
     LOG_LEVEL: 'silent',
-    REQUIRE_APPROVAL_FOR_WRITES: 'true'
+    REQUIRE_APPROVAL_FOR_WRITES: 'true',
+    ...overrides
   });
   return {
     config,
@@ -65,5 +66,47 @@ describe('governed tool execution', () => {
       tenantId: 'tenant-a',
       approvalId: 'approval-123'
     });
+  });
+
+  it('never returns raw connector secrets through structured output or MCP text', async () => {
+    const run = vi.fn(async () => ({
+      apiKey: 'sk-proj-abcdefghijklmnopqrstuvwxyz',
+      note: 'Authorization: Bearer abcdefghijklmnopqrstuvwxyz',
+      safe: 'visible'
+    }));
+    const ctx = context('approval-123');
+    const auditLog = new AuditLog(ctx.logger, true, true);
+    const result = await executeEnterpriseTool(writeTool(run), { value: 'approved' }, ctx, auditLog);
+
+    expect(result.ok).toBe(true);
+    expect(JSON.stringify(result.output)).not.toContain('sk-proj-abcdefghijklmnopqrstuvwxyz');
+    expect(JSON.stringify(result.output)).not.toContain('abcdefghijklmnopqrstuvwxyz');
+    expect(result.text).not.toContain('abcdefghijklmnopqrstuvwxyz');
+    expect(result.output).toMatchObject({ apiKey: '[redacted]', safe: 'visible' });
+  });
+
+  it('wraps oversized structured output instead of bypassing the configured result limit', async () => {
+    const run = vi.fn(async () => ({ payload: 'x'.repeat(5000) }));
+    const ctx = context('approval-123', { MAX_TOOL_RESULT_BYTES: '1024' });
+    const auditLog = new AuditLog(ctx.logger, true, true);
+    const result = await executeEnterpriseTool(writeTool(run), { value: 'approved' }, ctx, auditLog);
+
+    expect(result.ok).toBe(true);
+    expect(result.truncated).toBe(true);
+    expect(result.output).toMatchObject({ truncated: true });
+    expect(Buffer.byteLength(result.text, 'utf8')).toBeLessThanOrEqual(1024);
+  });
+
+  it('redacts secret-bearing upstream error messages before logging or returning them', async () => {
+    const run = vi.fn(async () => {
+      throw new Error('upstream Authorization: Bearer abcdefghijklmnopqrstuvwxyz');
+    });
+    const ctx = context('approval-123');
+    const auditLog = new AuditLog(ctx.logger, true, true);
+    const result = await executeEnterpriseTool(writeTool(run), { value: 'approved' }, ctx, auditLog);
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).not.toContain('abcdefghijklmnopqrstuvwxyz');
+    expect(result.reason).toContain('[redacted]');
   });
 });

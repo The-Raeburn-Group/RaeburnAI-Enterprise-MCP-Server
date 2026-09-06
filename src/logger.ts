@@ -24,13 +24,14 @@ export function createLogger(config: Pick<AppConfig, 'LOG_LEVEL' | 'NODE_ENV'>) 
       ],
       censor: '[redacted]'
     },
-    transport:
-      config.NODE_ENV === 'development'
-        ? {
+    ...(config.NODE_ENV === 'development'
+      ? {
+          transport: {
             target: 'pino-pretty',
             options: { colorize: true, translateTime: 'SYS:standard' }
           }
-        : undefined
+        }
+      : {})
   });
 }
 

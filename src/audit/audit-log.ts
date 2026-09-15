@@ -7,6 +7,8 @@ export interface AuditEvent {
   actorId: string;
   requestId: string;
   approvalId?: string;
+  idempotencyKey?: string;
+  executionId?: string;
   source: 'chain-http' | 'stdio';
   tool: string;
   connector: string;

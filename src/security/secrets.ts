@@ -88,12 +88,14 @@ export function resolveSecretEnvironment(env: NodeJS.ProcessEnv): SecretResoluti
     }
 
     if (directValue) {
-      if (production) {
+      sources[name] = 'environment';
+      // GITHUB_TOKEN has a more specific production rejection in config.ts so
+      // operators retain the existing migration guidance. It is still rejected.
+      if (production && name !== 'GITHUB_TOKEN') {
         throw new Error(
           `${name} cannot contain a raw production credential. Mount the secret from the selected secret manager and set ${fileVariable}.`
         );
       }
-      sources[name] = 'environment';
     }
   }
 

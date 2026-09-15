@@ -10,6 +10,8 @@ export interface ExecutionIdentity {
   actorId: string;
   requestId: string;
   approvalId?: string;
+  idempotencyKey?: string;
+  executionId?: string;
   source: 'chain-http' | 'stdio';
 }
 

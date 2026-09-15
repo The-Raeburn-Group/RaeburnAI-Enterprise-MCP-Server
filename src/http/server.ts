@@ -12,6 +12,8 @@ const InvokeSchema = z.object({
   tool: z.string().min(1).max(200),
   input: z.unknown().default({})
 });
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,200}$/;
 
 export class ChainRequestError extends Error {
   constructor(
@@ -50,9 +52,26 @@ export function authenticateChainRequest(headers: IncomingHttpHeaders, config: A
   const actorId = header(headers, 'x-actor-id');
   const requestId = header(headers, 'x-request-id');
   const approvalId = header(headers, 'x-raeburn-approval-id');
+  const idempotencyKey = header(headers, 'idempotency-key');
+  const executionId = header(headers, 'x-raeburn-execution-id');
   if (!tenantId || !actorId || !requestId) {
     throw new ChainRequestError(400, 'missing_trusted_execution_context');
   }
+
+  const governedHeaders = [approvalId, idempotencyKey, executionId].filter(Boolean).length;
+  if (governedHeaders !== 0 && governedHeaders !== 3) {
+    throw new ChainRequestError(400, 'incomplete_governed_execution_context');
+  }
+  if (approvalId && !UUID_PATTERN.test(approvalId)) {
+    throw new ChainRequestError(400, 'invalid_chain_approval_id');
+  }
+  if (executionId && !UUID_PATTERN.test(executionId)) {
+    throw new ChainRequestError(400, 'invalid_chain_execution_id');
+  }
+  if (idempotencyKey && !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+    throw new ChainRequestError(400, 'invalid_chain_idempotency_key');
+  }
+
   if (!config.MCP_TENANT_ID) {
     throw new ChainRequestError(403, 'mcp_tenant_unconfigured');
   }
@@ -65,8 +84,16 @@ export function authenticateChainRequest(headers: IncomingHttpHeaders, config: A
     actorId,
     requestId,
     ...(approvalId ? { approvalId } : {}),
+    ...(idempotencyKey ? { idempotencyKey } : {}),
+    ...(executionId ? { executionId } : {}),
     source: 'chain-http'
   };
+}
+
+function requireGovernedExecution(identity: ExecutionIdentity): void {
+  if (!identity.approvalId || !identity.idempotencyKey || !identity.executionId) {
+    throw new ChainRequestError(400, 'governed_execution_context_required');
+  }
 }
 
 function json(response: ServerResponse, status: number, body: unknown): void {
@@ -128,6 +155,7 @@ export function createTenantBoundHttpServer(
       }
 
       if (request.method === 'POST' && url.pathname === '/v1/tools/invoke') {
+        requireGovernedExecution(identity);
         const body = InvokeSchema.parse(await readJson(request));
         const enterpriseTool = allTools(context).find((item) => item.name === body.tool);
         if (!enterpriseTool) throw new ChainRequestError(404, 'tool_not_found');
@@ -137,6 +165,8 @@ export function createTenantBoundHttpServer(
           tool: enterpriseTool.name,
           tenantId: identity.tenantId,
           requestId: identity.requestId,
+          approvalId: identity.approvalId,
+          executionId: identity.executionId,
           ...(result.security ? { security: result.security } : {}),
           ...(result.ok
             ? { output: result.output }

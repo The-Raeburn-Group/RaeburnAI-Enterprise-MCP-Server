@@ -1,10 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import {
-  createServer,
-  type IncomingHttpHeaders,
-  type IncomingMessage,
-  type ServerResponse
-} from 'node:http';
+import { createServer, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from 'node:http';
 import { z } from 'zod';
 import type { AuditLog } from '../audit/audit-log.js';
 import { allTools } from '../connectors/index.js';
@@ -17,8 +12,7 @@ const InvokeSchema = z.object({
   tool: z.string().min(1).max(200),
   input: z.unknown().default({})
 });
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,200}$/;
 
 export class ChainRequestError extends Error {
@@ -44,10 +38,7 @@ function equalSecret(provided: string, expected: string): boolean {
   return timingSafeEqual(left, right);
 }
 
-export function authenticateChainRequest(
-  headers: IncomingHttpHeaders,
-  config: AppConfig
-): ExecutionIdentity {
+export function authenticateChainRequest(headers: IncomingHttpHeaders, config: AppConfig): ExecutionIdentity {
   const expectedToken = config.RAEBURN_CHAIN_SERVICE_TOKEN;
   if (!expectedToken) throw new ChainRequestError(401, 'chain_service_auth_unconfigured');
 
@@ -197,11 +188,7 @@ export function createTenantBoundHttpServer(
   });
 }
 
-export async function startTenantBoundHttpServer(
-  config: AppConfig,
-  logger: Logger,
-  auditLog: AuditLog
-): Promise<void> {
+export async function startTenantBoundHttpServer(config: AppConfig, logger: Logger, auditLog: AuditLog): Promise<void> {
   const server = createTenantBoundHttpServer({ config, logger }, auditLog);
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);

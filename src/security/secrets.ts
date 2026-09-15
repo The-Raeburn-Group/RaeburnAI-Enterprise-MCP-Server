@@ -102,9 +102,6 @@ export function resolveSecretEnvironment(env: NodeJS.ProcessEnv): SecretResoluti
   return { env: resolved, sources };
 }
 
-export function secretSourceFor(
-  sources: SecretResolution['sources'],
-  name: SecretEnvName
-): SecretSource | undefined {
+export function secretSourceFor(sources: SecretResolution['sources'], name: SecretEnvName): SecretSource | undefined {
   return sources[name];
 }

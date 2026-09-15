@@ -75,13 +75,13 @@ describe('external secret references', () => {
     ).toThrow('could not be read');
 
     const empty = secretFile('');
-    expect(() =>
-      resolveSecretEnvironment({ NODE_ENV: 'production', GOOGLE_CLIENT_SECRET_FILE: empty })
-    ).toThrow('empty secret');
+    expect(() => resolveSecretEnvironment({ NODE_ENV: 'production', GOOGLE_CLIENT_SECRET_FILE: empty })).toThrow(
+      'empty secret'
+    );
 
     const oversized = secretFile('x'.repeat(64 * 1024 + 1));
-    expect(() =>
-      resolveSecretEnvironment({ NODE_ENV: 'production', GOOGLE_CLIENT_SECRET_FILE: oversized })
-    ).toThrow('64 KiB');
+    expect(() => resolveSecretEnvironment({ NODE_ENV: 'production', GOOGLE_CLIENT_SECRET_FILE: oversized })).toThrow(
+      '64 KiB'
+    );
   });
 });

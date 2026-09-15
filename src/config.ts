@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { resolveSecretEnvironment } from './security/secrets.js';
 
 const csv = z
   .string()
@@ -102,7 +103,8 @@ export type ConnectorName =
   | 'supabase';
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const config = EnvSchema.parse(env);
+  const secretResolution = resolveSecretEnvironment(env);
+  const config = EnvSchema.parse(secretResolution.env);
   if (config.NODE_ENV === 'production' && !config.REQUIRE_APPROVAL_FOR_WRITES) {
     throw new Error(
       'REQUIRE_APPROVAL_FOR_WRITES must stay true in production unless a reviewed release explicitly changes this guardrail.'

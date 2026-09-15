@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/config.js';
 import {
@@ -22,6 +25,17 @@ function contextFor(env: NodeJS.ProcessEnv): ConnectorContext {
       source: 'chain-http'
     }
   };
+}
+
+function withSecretFile<T>(value: string, callback: (filePath: string) => T): T {
+  const directory = mkdtempSync(join(tmpdir(), 'raeburn-mcp-github-'));
+  const filePath = join(directory, 'secret');
+  writeFileSync(filePath, value, { mode: 0o600 });
+  try {
+    return callback(filePath);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 }
 
 describe('GitHub repository boundaries', () => {
@@ -63,14 +77,16 @@ describe('GitHub credential posture', () => {
     ).toThrow('development-only compatibility setting');
   });
 
-  it('requires a production repository allowlist for the read credential', () => {
-    expect(() =>
-      loadConfig({
-        NODE_ENV: 'production',
-        MCP_TENANT_ID: 'tenant-a',
-        GITHUB_READ_TOKEN: 'fine-grained-read-token'
-      })
-    ).toThrow('GITHUB_ALLOWED_REPOSITORIES');
+  it('requires a production repository allowlist for the file-backed read credential', () => {
+    withSecretFile('fine-grained-read-token', (filePath) => {
+      expect(() =>
+        loadConfig({
+          NODE_ENV: 'production',
+          MCP_TENANT_ID: 'tenant-a',
+          GITHUB_READ_TOKEN_FILE: filePath
+        })
+      ).toThrow('GITHUB_ALLOWED_REPOSITORIES');
+    });
   });
 
   it('requires an independent write credential and write allowlist when writes are enabled', () => {
@@ -105,17 +121,19 @@ describe('GitHub credential posture', () => {
   });
 
   it('rejects broad classic repository scopes in production but accepts fine-grained/App-style empty scope headers', () => {
-    const config = loadConfig({
-      NODE_ENV: 'production',
-      MCP_TENANT_ID: 'tenant-a',
-      GITHUB_READ_TOKEN: 'fine-grained-read-token',
-      GITHUB_ALLOWED_REPOSITORIES: 'raebu/repo-a'
-    });
+    withSecretFile('fine-grained-read-token', (filePath) => {
+      const config = loadConfig({
+        NODE_ENV: 'production',
+        MCP_TENANT_ID: 'tenant-a',
+        GITHUB_READ_TOKEN_FILE: filePath,
+        GITHUB_ALLOWED_REPOSITORIES: 'raebu/repo-a'
+      });
 
-    expect(() => assertGitHubClassicScopePosture({ 'x-oauth-scopes': 'repo, read:user' }, config, 'read')).toThrow(
-      'broad classic OAuth/PAT scopes'
-    );
-    expect(() => assertGitHubClassicScopePosture({}, config, 'read')).not.toThrow();
+      expect(() => assertGitHubClassicScopePosture({ 'x-oauth-scopes': 'repo, read:user' }, config, 'read')).toThrow(
+        'broad classic OAuth/PAT scopes'
+      );
+      expect(() => assertGitHubClassicScopePosture({}, config, 'read')).not.toThrow();
+    });
   });
 });
 

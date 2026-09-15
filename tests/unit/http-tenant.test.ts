@@ -53,9 +53,9 @@ describe('Chain request authentication', () => {
   });
 
   it('rejects partial governed execution provenance', () => {
-    expect(() =>
-      authenticateChainRequest(trustedHeaders({ 'x-raeburn-approval-id': approvalId }), config())
-    ).toThrow('incomplete_governed_execution_context');
+    expect(() => authenticateChainRequest(trustedHeaders({ 'x-raeburn-approval-id': approvalId }), config())).toThrow(
+      'incomplete_governed_execution_context'
+    );
   });
 
   it('rejects malformed governed execution provenance', () => {

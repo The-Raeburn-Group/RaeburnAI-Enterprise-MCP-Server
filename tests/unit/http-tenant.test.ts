@@ -54,10 +54,7 @@ describe('Chain request authentication', () => {
 
   it('rejects partial governed execution provenance', () => {
     expect(() =>
-      authenticateChainRequest(
-        trustedHeaders({ 'x-raeburn-approval-id': approvalId }),
-        config()
-      )
+      authenticateChainRequest(trustedHeaders({ 'x-raeburn-approval-id': approvalId }), config())
     ).toThrow('incomplete_governed_execution_context');
   });
 
@@ -69,17 +66,14 @@ describe('Chain request authentication', () => {
 
   it('rejects an invalid service token', () => {
     expect(() =>
-      authenticateChainRequest(
-        trustedHeaders({ authorization: 'Bearer definitely-wrong-token-value' }),
-        config()
-      )
+      authenticateChainRequest(trustedHeaders({ authorization: 'Bearer definitely-wrong-token-value' }), config())
     ).toThrow('invalid_chain_service_token');
   });
 
   it('rejects a valid Chain token carrying another tenant', () => {
-    expect(() =>
-      authenticateChainRequest(trustedHeaders({ 'x-tenant-id': 'tenant-b' }), config())
-    ).toThrow('tenant_mismatch');
+    expect(() => authenticateChainRequest(trustedHeaders({ 'x-tenant-id': 'tenant-b' }), config())).toThrow(
+      'tenant_mismatch'
+    );
   });
 });
 
@@ -92,9 +86,7 @@ describe('tenant-bound HTTP bridge', () => {
         .splice(0)
         .map(
           (server) =>
-            new Promise<void>((resolve, reject) =>
-              server.close((error) => (error ? reject(error) : resolve()))
-            )
+            new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
         )
     );
   });

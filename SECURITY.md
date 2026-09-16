@@ -37,8 +37,10 @@ All content returned by third-party tools, retrieved documents and upstream conn
 - detects common instruction-override, authority-impersonation, secret-exfiltration and tool-escalation patterns without deleting the underlying evidence
 - records the content-security assessment in the audit trail
 - keeps tool authorization, tenant identity and approval provenance outside connector-controlled output
+- requires normal platform policy evaluation before any follow-on tool use even when no injection signal is detected
+- sets `autonomousToolChaining: blocked` and `followOnToolAction: governed-review-required` when an injection signal is detected
 
-Injection signals are warning evidence, not proof that content is malicious. Downstream model/orchestration layers must preserve the `data-only` boundary and must not grant external content authority merely because no heuristic signal was detected.
+Injection signals are warning evidence, not proof that content is malicious. The chaining decision is therefore deliberately conservative: hostile-looking external data stays available as evidence, but it cannot be treated as authority for another autonomous tool action. Downstream model/orchestration layers must preserve the `data-only` boundary, honor the machine-readable chaining decision and must not grant external content authority merely because no heuristic signal was detected.
 
 ## Out of scope
 

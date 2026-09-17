@@ -42,6 +42,12 @@ All content returned by third-party tools, retrieved documents and upstream conn
 
 Injection signals are warning evidence, not proof that content is malicious. The chaining decision is therefore deliberately conservative: hostile-looking external data stays available as evidence, but it cannot be treated as authority for another autonomous tool action. Downstream model/orchestration layers must preserve the `data-only` boundary, honor the machine-readable chaining decision and must not grant external content authority merely because no heuristic signal was detected.
 
+### Prompt-injection evaluation baseline
+
+The repository includes a versioned adversarial regression corpus at `tests/fixtures/prompt-injection-corpus.json`. Run `npm run test:security` to execute the content-boundary tests plus the corpus evaluation. The corpus includes hostile nested instructions, authority impersonation, secret-exfiltration attempts, tool-escalation attempts and benign near-misses. Every case verifies the resulting chaining decision in addition to signal detection.
+
+This corpus is a regression baseline, not a claim of complete prompt-injection detection. Heuristics can produce false negatives or false positives. Production safety therefore continues to depend on the separate authority boundary, tenant/RBAC enforcement, approval policy, least-privilege credentials and downstream orchestration honoring the machine-readable chaining decision.
+
 ## Out of scope
 
 Misconfiguration, leaked local `.env` files, and excessive third-party API permissions are outside the project maintainers' control, but the project includes guardrails and documentation to reduce risk.

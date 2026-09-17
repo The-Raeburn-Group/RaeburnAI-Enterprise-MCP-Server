@@ -4,6 +4,9 @@ export type InjectionSignal =
   | 'secret_exfiltration'
   | 'tool_escalation';
 
+export type AutonomousToolChaining = 'policy-evaluation-required' | 'blocked';
+export type FollowOnToolAction = 'normal-governance' | 'governed-review-required';
+
 export interface UntrustedContentAssessment {
   origin: 'external-tool';
   trust: 'untrusted';
@@ -11,6 +14,8 @@ export interface UntrustedContentAssessment {
   handling: 'data-only';
   injectionDetected: boolean;
   signals: InjectionSignal[];
+  autonomousToolChaining: AutonomousToolChaining;
+  followOnToolAction: FollowOnToolAction;
 }
 
 export interface BoundedUntrustedText {
@@ -77,13 +82,16 @@ function boundedScanText(value: unknown, maxBytes = 128_000): string {
 export function assessUntrustedContent(value: unknown): UntrustedContentAssessment {
   const scanText = boundedScanText(value);
   const signals = SIGNAL_PATTERNS.filter(({ pattern }) => pattern.test(scanText)).map(({ signal }) => signal);
+  const injectionDetected = signals.length > 0;
   return {
     origin: 'external-tool',
     trust: 'untrusted',
     instructionAuthority: 'none',
     handling: 'data-only',
-    injectionDetected: signals.length > 0,
-    signals
+    injectionDetected,
+    signals,
+    autonomousToolChaining: injectionDetected ? 'blocked' : 'policy-evaluation-required',
+    followOnToolAction: injectionDetected ? 'governed-review-required' : 'normal-governance'
   };
 }
 

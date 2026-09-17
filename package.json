@@ -29,6 +29,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run test",
+    "validate:supply-chain": "node scripts/validate-supply-chain.mjs",
     "docker:build": "docker build -t raeburnai-enterprise-mcp .",
     "audit:deps": "npm audit --omit=dev --audit-level=high"
   },

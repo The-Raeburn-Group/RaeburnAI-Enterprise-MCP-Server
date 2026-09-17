@@ -27,7 +27,7 @@ const SIGNAL_PATTERNS: ReadonlyArray<{ signal: InjectionSignal; pattern: RegExp 
   {
     signal: 'instruction_override',
     pattern:
-      /\b(?:ignore|disregard|forget|override)\b[\s\S]{0,120}\b(?:previous|prior|above|system|developer|instructions?|rules?|policy)\b/i
+      /\b(?:ignore|disregard|forget|override)\b[\s\S]{0,120}\b(?:(?:previous|prior|above)\s+(?:(?:system|developer)\s+)?(?:instructions?|rules?|policy)|(?:system|developer)\s+(?:instructions?|rules?|policy|prompts?|messages?)|instructions?|rules?|policy)\b/i
   },
   {
     signal: 'authority_impersonation',

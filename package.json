@@ -23,7 +23,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
-    "test:security": "vitest run tests/unit/untrusted-content.test.ts tests/unit/tool-content-boundary.test.ts tests/unit/prompt-injection-evals.test.ts",
+    "test:security": "vitest run tests/unit/untrusted-content.test.ts tests/unit/tool-content-boundary.test.ts tests/unit/prompt-injection-evals.test.ts tests/unit/tool-egress.test.ts tests/unit/http-tenant.test.ts",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/e2e",
     "format": "prettier --write .",

@@ -49,10 +49,7 @@ describe('Chain request authentication', () => {
 
   it('rejects an invalid trusted data-sensitivity header', () => {
     expect(() =>
-      authenticateChainRequest(
-        trustedHeaders({ 'x-raeburn-data-sensitivity': 'secret' }),
-        config()
-      )
+      authenticateChainRequest(trustedHeaders({ 'x-raeburn-data-sensitivity': 'secret' }), config())
     ).toThrow('invalid_data_sensitivity');
   });
 

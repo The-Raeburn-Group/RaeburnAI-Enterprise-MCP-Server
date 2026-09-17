@@ -12,15 +12,33 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm audit --audit-level=high
-      - run: npm run check
-      - run: npm run build
-      - run: npm run audit:deps
-      - run: npm run docker:build
+      - name: Install deterministic dependencies
+        run: npm ci
+      - name: Validate software supply-chain policy
+        run: npm run validate:supply-chain
+      - name: Enforce zero High/Critical dependency gate
+        run: npm audit --audit-level=high
+      - name: Run quality checks
+        run: npm run check
+      - name: Build package
+        run: npm run build
+      - name: Audit production dependencies
+        run: npm run audit:deps
+      - name: Build deterministic container image
+        run: docker build -t raeburnai-enterprise-mcp:${{ github.sha }} .
+      - name: Scan container for High/Critical vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: raeburnai-enterprise-mcp:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH

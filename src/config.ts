@@ -66,6 +66,8 @@ const EnvSchema = z.object({
   AUDIT_LOG_ENABLED: booleanFromEnv(true),
   AUDIT_LOG_REDACT_SECRETS: booleanFromEnv(true),
   MAX_TOOL_RESULT_BYTES: z.coerce.number().int().min(1024).max(1_000_000).default(250_000),
+  TOOL_EGRESS_POLICY: optionalNonEmpty,
+  CONNECTOR_EGRESS_CLASSIFICATIONS: optionalNonEmpty,
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REFRESH_TOKEN: z.string().optional(),

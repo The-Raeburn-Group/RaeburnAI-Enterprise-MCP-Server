@@ -4,12 +4,14 @@ import type { Logger } from '../logger.js';
 import type { ToolRisk } from '../security/policy.js';
 
 export type ToolInputSchema = z.ZodObject<z.ZodRawShape>;
+export type DataSensitivity = 'public' | 'internal' | 'confidential' | 'restricted';
 
 export interface ExecutionIdentity {
   tenantId: string;
   actorId: string;
   requestId: string;
   approvalId?: string;
+  dataSensitivity?: DataSensitivity;
   source: 'chain-http' | 'stdio';
 }
 

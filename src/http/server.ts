@@ -6,12 +6,14 @@ import { allTools } from '../connectors/index.js';
 import type { ConnectorContext, ExecutionIdentity } from '../connectors/types.js';
 import type { AppConfig } from '../config.js';
 import type { Logger } from '../logger.js';
-import { connectorStatus, executeEnterpriseTool } from '../mcp/server.js';
+import { executeEnterpriseTool, connectorStatus } from '../mcp/server.js';
+import { enforceToolEgress, ToolEgressPolicyError } from '../security/tool-egress.js';
 
 const InvokeSchema = z.object({
   tool: z.string().min(1).max(200),
   input: z.unknown().default({})
 });
+const DataSensitivitySchema = z.enum(['public', 'internal', 'confidential', 'restricted']);
 
 export class ChainRequestError extends Error {
   constructor(
@@ -50,6 +52,7 @@ export function authenticateChainRequest(headers: IncomingHttpHeaders, config: A
   const actorId = header(headers, 'x-actor-id');
   const requestId = header(headers, 'x-request-id');
   const approvalId = header(headers, 'x-raeburn-approval-id');
+  const rawDataSensitivity = header(headers, 'x-raeburn-data-sensitivity');
   if (!tenantId || !actorId || !requestId) {
     throw new ChainRequestError(400, 'missing_trusted_execution_context');
   }
@@ -60,11 +63,21 @@ export function authenticateChainRequest(headers: IncomingHttpHeaders, config: A
     throw new ChainRequestError(403, 'tenant_mismatch');
   }
 
+  let dataSensitivity: ExecutionIdentity['dataSensitivity'];
+  if (rawDataSensitivity) {
+    const parsed = DataSensitivitySchema.safeParse(rawDataSensitivity);
+    if (!parsed.success) {
+      throw new ChainRequestError(400, 'invalid_data_sensitivity');
+    }
+    dataSensitivity = parsed.data;
+  }
+
   return {
     tenantId,
     actorId,
     requestId,
     ...(approvalId ? { approvalId } : {}),
+    ...(dataSensitivity ? { dataSensitivity } : {}),
     source: 'chain-http'
   };
 }
@@ -131,12 +144,34 @@ export function createTenantBoundHttpServer(
         const body = InvokeSchema.parse(await readJson(request));
         const enterpriseTool = allTools(context).find((item) => item.name === body.tool);
         if (!enterpriseTool) throw new ChainRequestError(404, 'tool_not_found');
+
+        const egress = enforceToolEgress(enterpriseTool, context);
+        baseContext.logger.info(
+          {
+            tenantId: identity.tenantId,
+            requestId: identity.requestId,
+            tool: enterpriseTool.name,
+            connector: enterpriseTool.connector,
+            egress
+          },
+          'tool egress policy allowed connector dispatch'
+        );
+
         const result = await executeEnterpriseTool(enterpriseTool, body.input, context, auditLog);
         return json(response, result.ok ? 200 : 403, {
           ok: result.ok,
           tool: enterpriseTool.name,
           tenantId: identity.tenantId,
           requestId: identity.requestId,
+          ...(egress.enforced
+            ? {
+                egress: {
+                  boundary: egress.boundary,
+                  region: egress.region,
+                  dataSensitivity: egress.dataSensitivity
+                }
+              }
+            : {}),
           ...(result.security ? { security: result.security } : {}),
           ...(result.ok
             ? { output: result.output }
@@ -146,6 +181,13 @@ export function createTenantBoundHttpServer(
 
       throw new ChainRequestError(404, 'not_found');
     } catch (error) {
+      if (error instanceof ToolEgressPolicyError) {
+        baseContext.logger.warn(
+          { code: error.code, status: error.status },
+          'tool egress policy blocked connector dispatch'
+        );
+        return json(response, error.status, { error: error.code });
+      }
       if (error instanceof ChainRequestError) {
         return json(response, error.status, { error: error.code });
       }

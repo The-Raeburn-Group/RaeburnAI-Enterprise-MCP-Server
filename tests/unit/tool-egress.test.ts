@@ -20,10 +20,7 @@ function testTool(connector: EnterpriseTool['connector'] = 'github'): Enterprise
   };
 }
 
-function context(
-  overrides: NodeJS.ProcessEnv = {},
-  dataSensitivity?: DataSensitivity
-): ConnectorContext {
+function context(overrides: NodeJS.ProcessEnv = {}, dataSensitivity?: DataSensitivity): ConnectorContext {
   const config = loadConfig({
     MCP_TRANSPORT: 'http',
     MCP_TENANT_ID: 'tenant-a',
@@ -78,11 +75,7 @@ describe('tool egress policy', () => {
 
   it('requires trusted sensitivity whenever an egress policy is active', () => {
     expectPolicyError(
-      () =>
-        enforceToolEgress(
-          testTool(),
-          context({ TOOL_EGRESS_POLICY: policy({ mode: 'local_only' }) })
-        ),
+      () => enforceToolEgress(testTool(), context({ TOOL_EGRESS_POLICY: policy({ mode: 'local_only' }) })),
       'trusted_data_sensitivity_required',
       400
     );

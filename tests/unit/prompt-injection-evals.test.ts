@@ -1,9 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import {
-  assessUntrustedContent,
-  type InjectionSignal
-} from '../../src/security/untrusted-content.js';
+import { assessUntrustedContent, type InjectionSignal } from '../../src/security/untrusted-content.js';
 
 type EvaluationCase = {
   id: string;

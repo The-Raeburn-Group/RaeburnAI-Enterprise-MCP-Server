@@ -1,10 +1,6 @@
 import { z } from 'zod';
 import type { AppConfig, ConnectorName } from '../config.js';
-import type {
-  ConnectorContext,
-  DataSensitivity,
-  EnterpriseTool
-} from '../connectors/types.js';
+import type { ConnectorContext, DataSensitivity, EnterpriseTool } from '../connectors/types.js';
 
 const connectorNameSchema = z.enum([
   'gmail',
@@ -128,23 +124,17 @@ function readPolicy(config: AppConfig): ToolEgressPolicy | undefined {
     }
     return undefined;
   }
-  const parsed = toolEgressPolicySchema.safeParse(
-    parseJson(raw, 'tool_egress_policy_invalid')
-  );
+  const parsed = toolEgressPolicySchema.safeParse(parseJson(raw, 'tool_egress_policy_invalid'));
   if (!parsed.success) {
     throw new ToolEgressPolicyError(503, 'tool_egress_policy_invalid');
   }
   return parsed.data;
 }
 
-function readClassifications(
-  config: AppConfig
-): Partial<Record<ConnectorName, ConnectorEgressClassification>> {
+function readClassifications(config: AppConfig): Partial<Record<ConnectorName, ConnectorEgressClassification>> {
   const raw = config.CONNECTOR_EGRESS_CLASSIFICATIONS;
   if (!raw) return {};
-  const parsed = connectorClassificationsSchema.safeParse(
-    parseJson(raw, 'connector_egress_classification_invalid')
-  );
+  const parsed = connectorClassificationsSchema.safeParse(parseJson(raw, 'connector_egress_classification_invalid'));
   if (!parsed.success) {
     throw new ToolEgressPolicyError(503, 'connector_egress_classification_invalid');
   }
@@ -157,24 +147,17 @@ function assertSensitivityAllowed(
   policy: ToolEgressPolicy
 ): void {
   if (boundary === 'local') return;
-  const ceiling =
-    boundary === 'private'
-      ? policy.max_private_sensitivity
-      : policy.max_external_sensitivity;
+  const ceiling = boundary === 'private' ? policy.max_private_sensitivity : policy.max_external_sensitivity;
   if (!ceiling) {
     throw new ToolEgressPolicyError(
       403,
-      boundary === 'private'
-        ? 'tool_egress_private_sensitivity_denied'
-        : 'tool_egress_external_sensitivity_denied'
+      boundary === 'private' ? 'tool_egress_private_sensitivity_denied' : 'tool_egress_external_sensitivity_denied'
     );
   }
   if (SENSITIVITY_RANK[sensitivity] > SENSITIVITY_RANK[ceiling]) {
     throw new ToolEgressPolicyError(
       403,
-      boundary === 'private'
-        ? 'tool_egress_private_sensitivity_denied'
-        : 'tool_egress_external_sensitivity_denied'
+      boundary === 'private' ? 'tool_egress_private_sensitivity_denied' : 'tool_egress_external_sensitivity_denied'
     );
   }
 }
@@ -205,8 +188,7 @@ export function enforceToolEgress(
     }
     if (
       policy.mode === 'allow_list' &&
-      (!policy.connectors.includes(tool.connector) ||
-        !policy.regions.includes(classification.region))
+      (!policy.connectors.includes(tool.connector) || !policy.regions.includes(classification.region))
     ) {
       throw new ToolEgressPolicyError(403, 'tool_egress_destination_denied');
     }

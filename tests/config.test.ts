@@ -1,6 +1,20 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { evaluateToolPolicy } from '../src/security/policy.js';
 import { isConnectorEnabled, loadConfig } from '../src/config.js';
+
+function withSecretFile<T>(value: string, callback: (filePath: string) => T): T {
+  const directory = mkdtempSync(join(tmpdir(), 'raeburn-mcp-config-'));
+  const filePath = join(directory, 'secret');
+  writeFileSync(filePath, value, { mode: 0o600 });
+  try {
+    return callback(filePath);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
 
 describe('configuration', () => {
   it('loads defaults safely', () => {
@@ -51,7 +65,7 @@ describe('configuration', () => {
     ).toThrow('AUDIT_LOG_REDACT_SECRETS');
   });
 
-  it('requires a strong Chain service credential for production HTTP transport', () => {
+  it('requires a strong file-backed Chain service credential for production HTTP transport', () => {
     expect(() =>
       loadConfig({
         NODE_ENV: 'production',
@@ -61,13 +75,16 @@ describe('configuration', () => {
       })
     ).toThrow('RAEBURN_CHAIN_SERVICE_TOKEN');
 
-    const config = loadConfig({
-      NODE_ENV: 'production',
-      MCP_TRANSPORT: 'http',
-      MCP_TENANT_ID: 'tenant-a',
-      RAEBURN_CHAIN_SERVICE_TOKEN: '0123456789abcdefghijklmnop'
+    withSecretFile('0123456789abcdefghijklmnop', (filePath) => {
+      const config = loadConfig({
+        NODE_ENV: 'production',
+        MCP_TRANSPORT: 'http',
+        MCP_TENANT_ID: 'tenant-a',
+        RAEBURN_CHAIN_SERVICE_TOKEN_FILE: filePath
+      });
+      expect(config.MCP_TENANT_ID).toBe('tenant-a');
+      expect(config.RAEBURN_CHAIN_SERVICE_TOKEN).toBe('0123456789abcdefghijklmnop');
     });
-    expect(config.MCP_TENANT_ID).toBe('tenant-a');
   });
 });
 

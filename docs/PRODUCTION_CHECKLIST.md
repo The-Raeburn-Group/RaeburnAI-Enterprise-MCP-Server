@@ -14,6 +14,39 @@
 - [ ] Build and scan the Docker image.
 - [ ] Create an incident response process for credential rotation.
 
+## Production secret delivery
+
+Production must not place long-lived connector or service credentials directly in environment values or committed `.env` files. The MCP service supports a provider-neutral mounted-secret contract so the deployment layer can use a managed secret store without coupling application code to one cloud vendor.
+
+For every sensitive variable, production uses the matching `*_FILE` variable. The referenced path must be absolute, readable as a regular file, non-empty and no larger than 64 KiB. Configuring both a direct secret and its `*_FILE` reference is rejected. The server resolves the file at startup and keeps the existing connector configuration interface internally.
+
+This pattern is compatible with secret files projected by Kubernetes/Docker, Vault Agent and cloud secret-store CSI integrations. Selection and configuration of the actual managed secret service, KMS key policy and workload identity remain deployment responsibilities.
+
+Sensitive production variables covered by this boundary:
+
+- `RAEBURN_CHAIN_SERVICE_TOKEN_FILE`
+- `GOOGLE_CLIENT_SECRET_FILE`
+- `GOOGLE_REFRESH_TOKEN_FILE`
+- `GITHUB_READ_TOKEN_FILE`
+- `GITHUB_WRITE_TOKEN_FILE`
+- `SLACK_BOT_TOKEN_FILE`
+- `MICROSOFT_CLIENT_SECRET_FILE`
+- `SALESFORCE_ACCESS_TOKEN_FILE`
+- `HUBSPOT_ACCESS_TOKEN_FILE`
+- `NOTION_TOKEN_FILE`
+- `SUPABASE_SERVICE_ROLE_KEY_FILE`
+
+`GITHUB_TOKEN` remains development-only compatibility and is rejected in production regardless of delivery method.
+
+Before production:
+
+- [ ] Select the managed secret store and KMS/encryption policy for the hosting environment.
+- [ ] Give each MCP deployment/workload its own least-privilege secret-read identity rather than sharing operator credentials.
+- [ ] Mount only the secret files needed by connectors enabled in `ENABLED_CONNECTORS`.
+- [ ] Confirm no raw production value is supplied for a sensitive variable covered by the `*_FILE` boundary.
+- [ ] Define independent rotation/revocation ownership for Chain service auth, Google, GitHub and every enabled SaaS connector.
+- [ ] Test startup failure for a missing/empty secret mount and verify secrets do not appear in process arguments, logs or deployment manifests.
+
 ## Google Workspace OAuth
 
 Use a Google Cloud project owned by the organisation rather than an individual's personal OAuth client. The current Google Workspace tools are intentionally read-only and the server validates the scopes on the **actual access token** returned by Google before making an API request.
@@ -33,7 +66,7 @@ Before enabling Google Workspace in production:
 - [ ] Create the OAuth consent screen and OAuth client in the organisation-owned Google Cloud project.
 - [ ] Enable only the Gmail, Calendar and/or Drive APIs actually required by the deployment.
 - [ ] Authorize only the exact read-only scopes listed above for connectors enabled in `ENABLED_CONNECTORS`.
-- [ ] Store `GOOGLE_CLIENT_SECRET` and `GOOGLE_REFRESH_TOKEN` in the selected production secret manager; do not place them in source control or a committed `.env` file.
+- [ ] Store the client secret and refresh token in the selected production secret manager and expose them through `GOOGLE_CLIENT_SECRET_FILE` and `GOOGLE_REFRESH_TOKEN_FILE`; do not place them in source control or a committed `.env` file.
 - [ ] Rotate/revoke the refresh token when connector access changes and issue a new token with the reduced scope set.
 - [ ] Run a read-only pilot and confirm the MCP server rejects a deliberately over-scoped token.
 
@@ -43,7 +76,7 @@ Production GitHub access is split into independent read and write credentials. `
 
 Read access:
 
-- [ ] Create `GITHUB_READ_TOKEN` as a fine-grained token or GitHub App installation token with read-only permissions required by the enabled tools.
+- [ ] Create a fine-grained read token or GitHub App installation token with read-only permissions required by the enabled tools and mount it via `GITHUB_READ_TOKEN_FILE`.
 - [ ] Set `GITHUB_ALLOWED_REPOSITORIES` to explicit `owner/repository` entries. Production refuses a configured read token without this allowlist.
 - [ ] Confirm `github.search_repositories` returns only allowlisted repositories and `github.list_issues` rejects a lookalike or non-allowlisted repository.
 - [ ] Confirm broad classic PAT/OAuth repository scopes such as `repo` or `public_repo` are rejected by the runtime.
@@ -51,11 +84,11 @@ Read access:
 Write access is a separate opt-in boundary:
 
 - [ ] Leave `GITHUB_ENABLE_WRITES=false` for read-only pilots.
-- [ ] When a write use case is approved, create a distinct `GITHUB_WRITE_TOKEN` rather than reusing the read credential.
+- [ ] When a write use case is approved, create a distinct write credential rather than reusing the read credential and mount it via `GITHUB_WRITE_TOKEN_FILE`.
 - [ ] Set `GITHUB_WRITE_ALLOWED_REPOSITORIES` to the minimum subset of `GITHUB_ALLOWED_REPOSITORIES` that may receive writes.
 - [ ] Grant only the fine-grained GitHub permission required by the write tool; for `github.create_issue`, do not grant unrelated repository administration or content-write permissions.
 - [ ] Verify the Chain approval flow before enabling writes, then confirm a request outside the write allowlist is rejected before GitHub API execution.
-- [ ] Store both credentials in the production secret manager and rotate them independently.
+- [ ] Rotate the read and write credentials independently.
 
 ## Connector review
 

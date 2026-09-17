@@ -25,9 +25,7 @@ function assertPinnedAction(file, reference, failures) {
 
   const ref = reference.value.slice(separator + 1);
   if (!immutableRef.test(ref)) {
-    failures.push(
-      `${file}:${reference.line} action must use a full 40-character commit SHA: ${reference.value}`,
-    );
+    failures.push(`${file}:${reference.line} action must use a full 40-character commit SHA: ${reference.value}`);
   }
 }
 
@@ -47,7 +45,7 @@ for (const [control, marker] of [
   ['High/Critical dependency gate', 'npm audit --audit-level=high'],
   ['supply-chain policy validation', 'npm run validate:supply-chain'],
   ['deterministic image tag', 'raeburnai-enterprise-mcp:${{ github.sha }}'],
-  ['High/Critical container scan', 'aquasecurity/trivy-action@'],
+  ['High/Critical container scan', 'aquasecurity/trivy-action@']
 ]) {
   if (!ciWorkflow.includes(marker)) {
     failures.push(`ci.yml is missing required ${control} marker: ${marker}`);
@@ -62,7 +60,7 @@ for (const [control, marker] of [
   ['GitHub provenance/SBOM attestation', 'actions/attest@'],
   ['keyless Sigstore signing', 'sigstore/cosign-installer@'],
   ['release checksums', 'SHA256SUMS'],
-  ['Sigstore bundles', '.sigstore'],
+  ['Sigstore bundles', '.sigstore']
 ]) {
   if (!releaseWorkflow.includes(marker)) {
     failures.push(`release.yml is missing required ${control} marker: ${marker}`);
@@ -76,5 +74,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Software supply-chain policy validated: ${workflowFiles.length} workflows use immutable action refs and required CI/release controls are present.`,
+  `Software supply-chain policy validated: ${workflowFiles.length} workflows use immutable action refs and required CI/release controls are present.`
 );

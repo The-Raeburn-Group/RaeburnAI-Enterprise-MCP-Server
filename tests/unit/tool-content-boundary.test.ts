@@ -41,6 +41,7 @@ describe('tool-content instruction firewall', () => {
     expect(result.ok).toBe(true);
     expect(result.output).toMatchObject({ title: 'External page', body: hostile });
     expect(result.security).toMatchObject({
+      schemaVersion: 'raeburnai.content-security.v1',
       origin: 'external-tool',
       trust: 'untrusted',
       instructionAuthority: 'none',
@@ -66,6 +67,7 @@ describe('tool-content instruction firewall', () => {
 
     expect(result.ok).toBe(true);
     expect(result.security).toMatchObject({
+      schemaVersion: 'raeburnai.content-security.v1',
       injectionDetected: false,
       autonomousToolChaining: 'policy-evaluation-required',
       followOnToolAction: 'normal-governance'

@@ -14,10 +14,10 @@ const corpus = JSON.parse(readFileSync(corpusUrl, 'utf8')) as EvaluationCase[];
 
 describe('prompt injection evaluation corpus', () => {
   it('contains unique hostile and benign cases so the suite tests detection and false positives', () => {
-    expect(corpus.length).toBeGreaterThanOrEqual(16);
+    expect(corpus.length).toBeGreaterThanOrEqual(26);
     expect(new Set(corpus.map((item) => item.id)).size).toBe(corpus.length);
-    expect(corpus.filter((item) => item.kind === 'hostile').length).toBeGreaterThanOrEqual(8);
-    expect(corpus.filter((item) => item.kind === 'benign').length).toBeGreaterThanOrEqual(6);
+    expect(corpus.filter((item) => item.kind === 'hostile').length).toBeGreaterThanOrEqual(16);
+    expect(corpus.filter((item) => item.kind === 'benign').length).toBeGreaterThanOrEqual(9);
   });
 
   for (const evaluation of corpus) {
@@ -25,6 +25,7 @@ describe('prompt injection evaluation corpus', () => {
       const assessment = assessUntrustedContent(evaluation.input);
       const hostile = evaluation.kind === 'hostile';
 
+      expect(assessment.schemaVersion).toBe('raeburnai.content-security.v1');
       expect(assessment.origin).toBe('external-tool');
       expect(assessment.trust).toBe('untrusted');
       expect(assessment.instructionAuthority).toBe('none');

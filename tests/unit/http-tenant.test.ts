@@ -101,6 +101,16 @@ describe('tenant-bound HTTP bridge', () => {
     expect(crossTenant.status).toBe(403);
     await expect(crossTenant.json()).resolves.toMatchObject({ error: 'tenant_mismatch' });
 
+    const contract = await fetch(`http://127.0.0.1:${port}/v1/security/content-contract`, {
+      headers: trustedHeaders()
+    });
+    expect(contract.status).toBe(200);
+    await expect(contract.json()).resolves.toMatchObject({
+      schemaVersion: 'raeburnai.content-security.v1',
+      tenantId: 'tenant-a',
+      orchestrationSteps: ['policy-evaluation', 'governed-review']
+    });
+
     const allowed = await fetch(`http://127.0.0.1:${port}/v1/tools`, {
       headers: trustedHeaders()
     });

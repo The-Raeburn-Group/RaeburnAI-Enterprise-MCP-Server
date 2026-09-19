@@ -190,10 +190,7 @@ function boundedScanText(value: unknown, maxBytes = 128_000): string {
   const normalizedNative = normalizeSecurityText(nativeText);
   const decoded = decodedBase64Fragments(nativeText, Math.min(32_000, Math.floor(maxBytes / 4)));
   if (decoded.length === 0) return normalizedNative;
-  return utf8Prefix(
-    [normalizedNative, ...decoded.map((item) => normalizeSecurityText(item))].join('\n'),
-    maxBytes
-  );
+  return utf8Prefix([normalizedNative, ...decoded.map((item) => normalizeSecurityText(item))].join('\n'), maxBytes);
 }
 
 function phraseSignal(scanText: string, signal: InjectionSignal): boolean {

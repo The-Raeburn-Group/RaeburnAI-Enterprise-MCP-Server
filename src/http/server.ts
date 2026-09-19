@@ -7,6 +7,7 @@ import type { ConnectorContext, ExecutionIdentity } from '../connectors/types.js
 import type { AppConfig } from '../config.js';
 import type { Logger } from '../logger.js';
 import { executeEnterpriseTool, connectorStatus } from '../mcp/server.js';
+import { CONTENT_SECURITY_CONTRACT_DESCRIPTOR } from '../security/content-security-contract.js';
 import { enforceToolEgress, ToolEgressPolicyError } from '../security/tool-egress.js';
 
 const InvokeSchema = z.object({
@@ -127,6 +128,13 @@ export function createTenantBoundHttpServer(
 
       const identity = authenticateChainRequest(request.headers, baseContext.config);
       const context: ConnectorContext = { ...baseContext, identity };
+
+      if (request.method === 'GET' && url.pathname === '/v1/security/content-contract') {
+        return json(response, 200, {
+          ...CONTENT_SECURITY_CONTRACT_DESCRIPTOR,
+          tenantId: identity.tenantId
+        });
+      }
 
       if (request.method === 'GET' && url.pathname === '/v1/tools') {
         return json(response, 200, {

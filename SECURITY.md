@@ -57,9 +57,20 @@ All content returned by third-party tools, retrieved documents and upstream conn
 
 Injection signals are warning evidence, not proof that content is malicious. The chaining decision is therefore deliberately conservative: hostile-looking external data stays available as evidence, but it cannot be treated as authority for another autonomous tool action. Downstream model/orchestration layers must preserve the `data-only` boundary, honor the machine-readable chaining decision and must not grant external content authority merely because no heuristic signal was detected.
 
+### Chain content-security contract
+
+The Chain HTTP bridge now publishes a versioned decision contract at `GET /v1/security/content-contract` for authenticated, tenant-bound callers. Tool results carry `security.schemaVersion = "raeburnai.content-security.v1"`.
+
+Consumers must validate the complete decision before acting. Unknown versions, missing fields and contradictory combinations fail validation. The reference consumer mapping intentionally has only two outcomes:
+
+- `governed-review` when injection is detected/signalled or the decision blocks autonomous chaining;
+- `policy-evaluation` for clean external content, which still requires the normal tenant, tool, egress and approval policy before any follow-on action.
+
+There is no contract state that authorises direct autonomous tool execution from external content. This repository proves the producer schema and fail-closed consumer helper; integrated Chain enforcement remains a separate platform-level gate.
+
 ### Prompt-injection evaluation baseline
 
-The repository includes a versioned adversarial regression corpus at `tests/fixtures/prompt-injection-corpus.json`. Run `npm run test:security` to execute the content-boundary tests plus the corpus evaluation. The corpus includes hostile nested instructions, authority impersonation, secret-exfiltration attempts, tool-escalation attempts and benign near-misses. Every case verifies the resulting chaining decision in addition to signal detection.
+The repository includes a versioned adversarial regression corpus at `tests/fixtures/prompt-injection-corpus.json`. Run `npm run test:security` to execute the content-boundary tests plus the corpus evaluation. The corpus includes hostile nested instructions, authority impersonation, secret-exfiltration attempts, tool-escalation attempts, zero-width/fullwidth obfuscation, bounded Base64-encoded payloads, Spanish/French/German attacks and benign encoded/multilingual near-misses. Every case verifies the resulting chaining decision in addition to signal detection.
 
 This corpus is a regression baseline, not a claim of complete prompt-injection detection. Heuristics can produce false negatives or false positives. Production safety therefore continues to depend on the separate authority boundary, tenant/RBAC enforcement, approval policy, least-privilege credentials and downstream orchestration honoring the machine-readable chaining decision.
 
